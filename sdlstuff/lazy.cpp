@@ -328,7 +328,6 @@ int lazy_main( int argc, char* args[] )
                     //User presses a key
                     else if( e.type == SDL_KEYDOWN )
                     {
-                        //Select surfaces based on key press
                         switch( e.key.keysym.sym )
                         {
                         case SDLK_UP:
@@ -363,7 +362,6 @@ int lazy_main( int argc, char* args[] )
                     }
                     else if( e.type == SDL_KEYUP )
                     {
-                        //Select surfaces based on key press
                         switch( e.key.keysym.sym )
                         {
                         case SDLK_UP:
@@ -388,6 +386,8 @@ int lazy_main( int argc, char* args[] )
                     }
                 }
                 int tmp;
+                int oldX = dot.mPosX;
+                int oldY = dot.mPosY;
 
                 tmp = dot.mPosX + dot.mDeltaX;
                 if (tmp >= 0 && tmp < SCREEN_WIDTH)
@@ -398,8 +398,12 @@ int lazy_main( int argc, char* args[] )
                     dot.mPosY = tmp;
 
                 //Draw dot
-                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0x00, 0x00, 0xFF );
-                SDL_RenderDrawPoint( gRenderer, dot.mPosX , dot.mPosY  );
+                SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0x00, 0xFF );
+                SDL_RenderDrawPoint( gRenderer, dot.mPosX , dot.mPosY );
+
+                //erase last dot
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+//                SDL_RenderDrawPoint( gRenderer, oldX, oldY );
 
 
                 //Update screen

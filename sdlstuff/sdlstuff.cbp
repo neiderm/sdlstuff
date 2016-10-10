@@ -40,6 +40,11 @@
 			<Add library="SDL2_image" />
 			<Add library="SDL2_ttf" />
 		</Linker>
+		<Unit filename="black11.cpp" />
+		<Unit filename="black11.h" />
+		<Unit filename="black3.cpp" />
+		<Unit filename="black3.h" />
+		<Unit filename="black4.h" />
 		<Unit filename="lazy.cpp" />
 		<Unit filename="main.cpp" />
 		<Extensions>
