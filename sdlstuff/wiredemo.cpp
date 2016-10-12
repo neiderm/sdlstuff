@@ -118,6 +118,8 @@ object test_object;   // the test object
 
 int wd_main( int argc, char* argv[] )
 {
+    int index;   // looping variable
+    char buffer[80]; // used to print strings
 
     //Start up SDL and create window
     if( !init() )
@@ -243,6 +245,47 @@ int wd_main( int argc, char* argv[] )
                 }
 
 
+
+                // rotate the object on all three axes
+                Rotate_Object((object_ptr)&test_object,2,4,6);
+
+
+                // convert the local coordinates into camera coordinates for projection
+                // note the viewer is at (0,0,0) with angles 0,0,0 so the transformaton
+                // is simply to add the world position to each local vertex
+
+                for (index=0; index<test_object.num_vertices; index++)
+                {
+                    test_object.vertices_camera[index].x =
+                        test_object.vertices_local[index].x+test_object.world_pos.x;
+
+                    test_object.vertices_camera[index].y =
+                        test_object.vertices_local[index].y+test_object.world_pos.y;
+
+                    test_object.vertices_camera[index].z =
+                        test_object.vertices_local[index].z+test_object.world_pos.z;
+
+                } // end for index
+
+
+
+                // draw the object
+                Draw_Object_Wire((object_ptr)&test_object);
+
+                // print out position of object
+                sprintf(buffer,"Object is at (%d,%d,%d)     ",(int)test_object.world_pos.x,
+                        (int)test_object.world_pos.y,
+                        (int)test_object.world_pos.z);
+/*
+                Print_String_DB(0,0,9,buffer,0);
+*/
+                // display double buffer
+
+
+
+                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
 
 
                 //Update screen

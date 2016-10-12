@@ -75,7 +75,7 @@ int poly_clip_min_x = POLY_CLIP_MIN_X,
 sprite textures;                        // this holds the textures
 
 // F U N C T I O N S /////////////////////////////////////////////////////////
-
+#if 0 // GN:
 void Make_Grey_Palette(void)
 {
 // this function generates 64 shades of grey and places them in the palette
@@ -98,14 +98,12 @@ void Make_Grey_Palette(void)
         // write the color in the palette starting at location 16, so as not to
         // fry the EGA pallete
 
-#if 0 // GN:
         Write_Color_Reg(index+16,(RGB_color_ptr)&color);
-#endif
 
     } // end for index
 
 } // end Make_Grey_Palette
-
+#endif
 ////////////////////////////////////////////////////////////////////////////////
 
 void Draw_Triangle_2D_Text(int x1,int y1,
@@ -506,22 +504,17 @@ void Triangle_Line(unsigned char *dest_addr,
 #if 0 // GN: right!
     _asm
     {
-        les di,dest_addr      ;
-        point es:di at data area
+   les di,dest_addr      ; point es:di at data area
 
-        mov al,BYTE PTR color ;
-        move into al and ah the color
+   mov al,BYTE PTR color ; move into al and ah the color
         mov ah,al
 
-        mov cx,xe             ;
-        compute number of words to move  (xe-xs+1)/2
+   mov cx,xe             ; compute number of words to move  (xe-xs+1)/2
         sub cx,xs
         inc cx
-        shr cx,1              ;
-        divide by 2
+   shr cx,1              ; divide by 2
 
-        rep stosw             ;
-        draw the line
+   rep stosw             ; draw the line
 
     } // end asm
 #endif // 0
