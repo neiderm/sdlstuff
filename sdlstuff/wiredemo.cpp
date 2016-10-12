@@ -19,10 +19,9 @@ and may not be redistributed without written permission.*/
 #include "ltexture.h"
 
 //Screen dimension constants
-static const int SCREEN_WIDTH = 640;
-static const int SCREEN_HEIGHT = 480;
 static const int SCREEN_FPS = 60;
 static const int SCREEN_TICK_PER_FRAME = 1000 / SCREEN_FPS;
+
 
 
 //Starts up SDL and creates window
@@ -139,8 +138,17 @@ static bool loadMedia()
 }
 
 
+
+SDL_Surface *gSurface;
+
+
+
 static void close()
 {
+
+SDL_FreeSurface( gSurface ); // I guess
+
+
     //Free loaded images
     gTextTexture.free();
 
@@ -159,6 +167,63 @@ static void close()
     IMG_Quit();
     SDL_Quit();
 }
+
+
+
+unsigned int _ouble_buffer[SCREEN_WIDTH * (SCREEN_HEIGHT + 1)];
+unsigned char *double_buffer;     // the double buffer
+unsigned int double_buffer_height;    // height of double buffer
+unsigned int double_buffer_size;      // total size of buffer in bytes
+
+
+
+//
+// must be called AFTER renderer is created!
+//
+int Create_Double_Buffer(int num_lines)
+{
+// allocate enough memory to hold the double buffer
+#if 0
+    if ((double_buffer = (unsigned char far *)_fmalloc(SCREEN_WIDTH * (num_lines + 1)))==NULL)
+    {
+        printf("\nCouldn't allocate double buffer.");
+        return(0);
+    }    // end if couldn't allocate
+#else
+//    double_buffer = _ouble_buffer;
+#endif
+    // set the height of the buffer and compute it's size
+    double_buffer_height = num_lines;
+    double_buffer_size = SCREEN_WIDTH * num_lines/2;
+
+    // fill the buffer with black
+    memset(double_buffer, 0, SCREEN_WIDTH * num_lines);
+
+
+
+#if 1
+    /* or using the default masks for the depth: */
+    gSurface = SDL_CreateRGBSurface(0,SCREEN_WIDTH,SCREEN_HEIGHT,32,0,0,0,0);
+
+#else
+
+SDL_Surface* SDL_CreateRGBSurfaceFrom(_ouble_buffer, // void*  pixels,
+                                      SCREEN_WIDTH, // int    width,
+                                      SCREEN_HEIGHT, // int    height,
+                                      32, // int    depth,
+                                      int    pitch,
+                                      Uint32 Rmask,
+                                      Uint32 Gmask,
+                                      Uint32 Bmask,
+                                      Uint32 Amask)
+
+#endif
+
+
+    // everything was ok
+    return(1);
+
+} // end Init_Double_Buffer
 
 
 
@@ -213,8 +278,19 @@ int wd_main( int argc, char* argv[] )
             // create the sin/cos lookup tables used for the rotation function
             Build_Look_Up_Tables();
 
+
+            // allocate double buffer
+            int h = 0; // tmp TODO
+            Create_Double_Buffer(h); // needs to be part of init() ... depends on height/width
+
+
             // set viewing distance
             viewing_distance = 250;
+
+            bool pause_rotation = 0;
+
+
+SDL_Texture *newTexture;
 
 
             //While application is running
@@ -263,6 +339,10 @@ int wd_main( int argc, char* argv[] )
                             test_object.world_pos.z-=15;
                             break;
 
+                        case SDLK_p:
+                            pause_rotation ^= 1;
+                            break;
+
                         case SDLK_PLUS:
                             break;
 
@@ -302,7 +382,8 @@ int wd_main( int argc, char* argv[] )
 
 
                 // rotate the object on all three axes
-                Rotate_Object((object_ptr)&test_object,2,4,6);
+                if (!pause_rotation)
+                    Rotate_Object((object_ptr)&test_object,2,4,6);
 
 
                 // convert the local coordinates into camera coordinates for projection
@@ -324,13 +405,31 @@ int wd_main( int argc, char* argv[] )
 
 
 
-                // draw the object
-                Draw_Object_Wire((object_ptr)&test_object);
-
 
                 //Clear screen
                 SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
                 SDL_RenderClear( gRenderer );
+
+
+
+        //Create texture from surface pixels
+        newTexture = SDL_CreateTextureFromSurface( gRenderer, gSurface );
+
+// now Draw_Object_Wire() etc or whatever other screen drawing
+
+
+                // display double buffer
+                //Render texture to screen
+                SDL_RenderCopy( gRenderer, newTexture, NULL, NULL );
+
+SDL_DestroyTexture( newTexture ); // GN: idfk
+
+
+
+                // draw the object
+                Draw_Object_Wire((object_ptr)&test_object);
+
+
 
 
                 // print out position of object
@@ -346,8 +445,6 @@ int wd_main( int argc, char* argv[] )
                 int x = 0, y = 0;
                 gTextTexture.render( x, y );
 
-
-                // display double buffer
 
 
 

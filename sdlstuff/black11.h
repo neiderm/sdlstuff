@@ -17,17 +17,20 @@
 #define GOURAUD_SHADING         2 (actually metallic under PLG defintion)
 #define SPFX_SHADING            3
 
-#define ASPECT_RATIO            (float)0.8  // the aspect ratio
-#define INVERSE_ASPECT_RATIO    (float)1.25 // the inverse of the aspect ratio
+#define SCREEN_WIDTH  640       // 320
+#define SCREEN_HEIGHT 400       // 200
 
-#define HALF_SCREEN_WIDTH       160 // center of screen
-#define HALF_SCREEN_HEIGHT      100
+#define ASPECT_RATIO            (float)0.8  // the aspect ratio  (WTF? .. h/w ?)
+#define INVERSE_ASPECT_RATIO    (float)(1 / ASPECT_RATIO) // 1.25 // the inverse of the aspect ratio
+
+#define HALF_SCREEN_WIDTH       (SCREEN_WIDTH / 2) // center of screen
+#define HALF_SCREEN_HEIGHT      (SCREEN_HEIGHT / 2) // center of screen
 
 #define POLY_CLIP_MIN_X         0  // miniumum x,y clip values
 #define POLY_CLIP_MIN_Y         0
 
-#define POLY_CLIP_MAX_X         319 // maxium x,y clip values
-#define POLY_CLIP_MAX_Y         199
+#define POLY_CLIP_MAX_X         (SCREEN_WIDTH - 1) // maxium x,y clip values
+#define POLY_CLIP_MAX_Y         (SCREEN_HEIGHT - 1)
 
 #define CLIP_Z_MODE             0  // this constant tells the clipper to do a
 // simple z extent clip

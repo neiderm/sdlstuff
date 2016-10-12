@@ -15,13 +15,19 @@
 
 // include all of our stuff
 
-#include "black3.h"
-#include "black4.h"
+#include "black3.h" // RGB_color
+#include "black4.h" // sprite textures
 //#include "black5.h"
 //#include "black6.h"
 //#include "black8.h"
 //#include "black9.h"
 #include "black11.h"
+
+
+//The window renderer
+#include <SDL.h>
+extern SDL_Renderer* gRenderer; // TODO: nasty globals
+
 
 // G L O B A L S //////////////////////////////////////////////////////////////
 
@@ -2961,6 +2967,9 @@ void Draw_Object_Wire(object_ptr the_object)
                 Draw_Line((int)ix1,(int)iy1,(int)ix2,(int)iy2,
                           (unsigned char)the_object->polys[curr_poly].color,
                           double_buffer);
+#else
+                SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0xFF, 0xFF );
+                SDL_RenderDrawLine( gRenderer, ix1, iy1, ix2, iy2 );
 #endif
 
             } // end if clip
@@ -2998,6 +3007,9 @@ void Draw_Object_Wire(object_ptr the_object)
             Draw_Line((int)ix1,(int)iy1,(int)ix2,(int)iy2,
                       (unsigned char)the_object->polys[curr_poly].color,
                       double_buffer);
+#else
+                SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0xFF, 0xFF );
+                SDL_RenderDrawLine( gRenderer, ix1, iy1, ix2, iy2 );
 #endif
 
         } // end if clip
@@ -3352,7 +3364,6 @@ void Print_Poly_List(void)
 } // end Print_Poly_List
 
 //////////////////////////////////////////////////////////////////////////////
-
 
 void Sort_Poly_List(void)
 {
