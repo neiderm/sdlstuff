@@ -297,9 +297,6 @@ int lazy_main( int argc, char* args[] )
             //Event handler
             SDL_Event e;
 
-            //Current animation frame
-            int frame = 0;
-
             //The clock time when the timer started
             int mStartTicks;
 

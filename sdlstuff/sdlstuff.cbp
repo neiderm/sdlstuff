@@ -47,6 +47,7 @@
 		<Unit filename="black4.h" />
 		<Unit filename="lazy.cpp" />
 		<Unit filename="main.cpp" />
+		<Unit filename="wiredemo.cpp" />
 		<Extensions>
 			<code_completion />
 			<debugger />

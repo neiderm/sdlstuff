@@ -2047,7 +2047,6 @@ int PLG_Load_Object(object_ptr the_object,char *filename,float scale)
 
     for (index=0; index<total_vertices; index++)
     {
-
         // read in vertex
 
         if (!PLG_Get_Line(buffer, 80,fp))
@@ -2099,7 +2098,6 @@ int PLG_Load_Object(object_ptr the_object,char *filename,float scale)
         } // end if hex color specifier
         else
         {
-
             color_des = atoi(token);
 
         } // end if decimal
@@ -2139,7 +2137,6 @@ int PLG_Load_Object(object_ptr the_object,char *filename,float scale)
 
         for (index_2=0; index_2<num_vertices; index_2++)
         {
-
             // read in next vertex number
 
             if (!(token = strtok(NULL," ")) )
