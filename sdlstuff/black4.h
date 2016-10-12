@@ -2,8 +2,8 @@
 
 // D E F I N E S  ////////////////////////////////////////////////////////////
 
-#define SCREEN_WIDTH      (unsigned int)320 // mode 13h screen dimensions
-#define SCREEN_HEIGHT     (unsigned int)200
+//#define SCREEN_WIDTH      (unsigned int)320 // mode 13h screen dimensions
+//#define SCREEN_HEIGHT     (unsigned int)200
 
 // screen transition commands
 

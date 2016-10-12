@@ -46,6 +46,8 @@
 		<Unit filename="black3.h" />
 		<Unit filename="black4.h" />
 		<Unit filename="lazy.cpp" />
+		<Unit filename="ltexture.cpp" />
+		<Unit filename="ltexture.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="wiredemo.cpp" />
 		<Extensions>

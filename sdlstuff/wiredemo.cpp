@@ -1,9 +1,10 @@
 /*This source code copyrighted by Lazy Foo' Productions (2004-2015)
 and may not be redistributed without written permission.*/
 
-//Using SDL, SDL_image, standard IO, and strings
+//Using SDL, SDL_image, SDL_ttf, standard IO, math, and strings
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_ttf.h>
 #include <stdio.h>
 #include <string>
 
@@ -15,10 +16,11 @@ and may not be redistributed without written permission.*/
 //#include "black9.h"
 #include "black11.h"
 
+#include "ltexture.h"
 
 //Screen dimension constants
-//const int SCREEN_WIDTH = 640;
-//const int SCREEN_HEIGHT = 480;
+static const int SCREEN_WIDTH = 640;
+static const int SCREEN_HEIGHT = 480;
 static const int SCREEN_FPS = 60;
 static const int SCREEN_TICK_PER_FRAME = 1000 / SCREEN_FPS;
 
@@ -36,8 +38,13 @@ static void close();
 static SDL_Window* gWindow = NULL;
 
 //The window renderer
-static SDL_Renderer* gRenderer = NULL;
+extern SDL_Renderer* gRenderer; // TODO: nasty globals
 
+//Globally used font
+extern TTF_Font *gFont; // TODO: nasty globals
+
+//Rendered texture
+static LTexture gTextTexture;
 
 
 
@@ -89,7 +96,42 @@ static bool init()
                     printf( "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError() );
                     success = false;
                 }
+
+                //Initialize SDL_ttf
+                if( TTF_Init() == -1 )
+                {
+                    printf( "SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError() );
+                    success = false;
+                }
             }
+        }
+    }
+
+    return success;
+}
+
+
+static bool loadMedia()
+{
+    //Loading success flag
+    bool success = true;
+
+    //Open the font
+    gFont = TTF_OpenFont( "lazy.ttf", 28 );
+
+    if( gFont == NULL )
+    {
+        printf( "Failed to load lazy font! SDL_ttf Error: %s\n", TTF_GetError() );
+        success = false;
+    }
+    else
+    {
+        //Render text
+        SDL_Color textColor = { 0, 0, 0 };
+        if( !gTextTexture.loadFromRenderedText( "The quick brown fox jumps over the lazy dog", textColor ) )
+        {
+            printf( "Failed to render text texture!\n" );
+            success = false;
         }
     }
 
@@ -99,6 +141,13 @@ static bool init()
 
 static void close()
 {
+    //Free loaded images
+    gTextTexture.free();
+
+    //Free global font
+    TTF_CloseFont( gFont );
+    gFont = NULL;
+
     //Destroy window
     SDL_DestroyRenderer( gRenderer );
     SDL_DestroyWindow( gWindow );
@@ -106,6 +155,7 @@ static void close()
     gRenderer = NULL;
 
     //Quit SDL subsystems
+    TTF_Quit();
     IMG_Quit();
     SDL_Quit();
 }
@@ -121,6 +171,10 @@ int wd_main( int argc, char* argv[] )
     int index;   // looping variable
     char buffer[80]; // used to print strings
 
+    // try this one first, if it fails, no other cleanup needed at this point
+    if (!PLG_Load_Object(&test_object,argv[1],1))
+        return 1; // epic fail
+
     //Start up SDL and create window
     if( !init() )
     {
@@ -129,7 +183,7 @@ int wd_main( int argc, char* argv[] )
     else
     {
         //Load media
-        if (!PLG_Load_Object(&test_object,argv[1],1))
+        if( !loadMedia() )
         {
             printf( "Failed to load media!\n" );
         }
@@ -143,6 +197,7 @@ int wd_main( int argc, char* argv[] )
 
             //The clock time when the timer started
             int mStartTicks;
+
 
             //Clear screen
             SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
@@ -272,20 +327,28 @@ int wd_main( int argc, char* argv[] )
                 // draw the object
                 Draw_Object_Wire((object_ptr)&test_object);
 
-                // print out position of object
-                sprintf(buffer,"Object is at (%d,%d,%d)     ",(int)test_object.world_pos.x,
-                        (int)test_object.world_pos.y,
-                        (int)test_object.world_pos.z);
-/*
-                Print_String_DB(0,0,9,buffer,0);
-*/
-                // display double buffer
-
-
 
                 //Clear screen
                 SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
                 SDL_RenderClear( gRenderer );
+
+
+                // print out position of object
+                sprintf(buffer,"Object is at (%d,%d,%d)     ",(int)test_object.world_pos.x,
+                        (int)test_object.world_pos.y,
+                        (int)test_object.world_pos.z);
+
+                //Render text
+                if( !gTextTexture.loadFromRenderedText( buffer, { 255, 0, 0 } ) )
+                {
+                    printf( "Failed to render text texture!\n" );
+                }
+                int x = 0, y = 0;
+                gTextTexture.render( x, y );
+
+
+                // display double buffer
+
 
 
                 //Update screen
@@ -299,9 +362,7 @@ int wd_main( int argc, char* argv[] )
                     //Wait remaining time
                     SDL_Delay( SCREEN_TICK_PER_FRAME - frameTicks );
                 }
-
             }
-
         }
     }
 

@@ -7,7 +7,7 @@ int wd_main( int argc, char* argv[] );
 
 int main( int argc, char* argv[] )
 {
-#if 1
+#if 0
     lazy_main(argc, argv);
 #else
 char *asdf[2] = {"CUBEW.PLG" , "PYRAMIDW.PLG" };
