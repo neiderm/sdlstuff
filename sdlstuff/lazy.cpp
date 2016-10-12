@@ -1,9 +1,10 @@
 /*This source code copyrighted by Lazy Foo' Productions (2004-2015)
 and may not be redistributed without written permission.*/
 
-//Using SDL, SDL_image, standard IO, and strings
+//Using SDL, SDL_image, SDL_ttf, standard IO, math, and strings
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_ttf.h>
 #include <stdio.h>
 #include <string>
 
@@ -26,6 +27,9 @@ public:
     //Loads image at specified path
     bool loadFromFile( std::string path );
 
+    //Creates image from font string
+    bool loadFromRenderedText( std::string textureText, SDL_Color textColor );
+
     //Deallocates texture
     void free();
 
@@ -39,7 +43,7 @@ public:
     void setAlpha( Uint8 alpha );
 
     //Renders texture at given point
-    void render( int x, int y, SDL_Rect* clip = NULL );
+    void render( int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
 
     //Gets image dimensions
     int getWidth();
@@ -69,6 +73,11 @@ SDL_Window* gWindow = NULL;
 //The window renderer
 SDL_Renderer* gRenderer = NULL;
 
+//Globally used font
+TTF_Font *gFont = NULL;
+
+//Rendered texture
+LTexture gTextTexture;
 
 
 LTexture::LTexture()
@@ -126,6 +135,40 @@ bool LTexture::loadFromFile( std::string path )
     return mTexture != NULL;
 }
 
+bool LTexture::loadFromRenderedText( std::string textureText, SDL_Color textColor )
+{
+    //Get rid of preexisting texture
+    free();
+
+    //Render text surface
+    SDL_Surface* textSurface = TTF_RenderText_Solid( gFont, textureText.c_str(), textColor );
+    if( textSurface == NULL )
+    {
+        printf( "Unable to render text surface! SDL_ttf Error: %s\n", TTF_GetError() );
+    }
+    else
+    {
+        //Create texture from surface pixels
+        mTexture = SDL_CreateTextureFromSurface( gRenderer, textSurface );
+        if( mTexture == NULL )
+        {
+            printf( "Unable to create texture from rendered text! SDL Error: %s\n", SDL_GetError() );
+        }
+        else
+        {
+            //Get image dimensions
+            mWidth = textSurface->w;
+            mHeight = textSurface->h;
+        }
+
+        //Get rid of old surface
+        SDL_FreeSurface( textSurface );
+    }
+
+    //Return success
+    return mTexture != NULL;
+}
+
 void LTexture::free()
 {
     //Free texture if it exists
@@ -156,7 +199,7 @@ void LTexture::setAlpha( Uint8 alpha )
     SDL_SetTextureAlphaMod( mTexture, alpha );
 }
 
-void LTexture::render( int x, int y, SDL_Rect* clip )
+void LTexture::render( int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip )
 {
     //Set rendering space and render to screen
     SDL_Rect renderQuad = { x, y, mWidth, mHeight };
@@ -169,7 +212,7 @@ void LTexture::render( int x, int y, SDL_Rect* clip )
     }
 
     //Render to screen
-    SDL_RenderCopy( gRenderer, mTexture, clip, &renderQuad );
+    SDL_RenderCopyEx( gRenderer, mTexture, clip, &renderQuad, angle, center, flip );
 }
 
 int LTexture::getWidth()
@@ -230,6 +273,13 @@ bool init()
                     printf( "SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError() );
                     success = false;
                 }
+
+                //Initialize SDL_ttf
+                if( TTF_Init() == -1 )
+                {
+                    printf( "SDL_ttf could not initialize! SDL_ttf Error: %s\n", TTF_GetError() );
+                    success = false;
+                }
             }
         }
     }
@@ -242,12 +292,36 @@ bool loadMedia()
     //Loading success flag
     bool success = true;
 
-    return success; // GN: nothing to see here
+    //Open the font
+    gFont = TTF_OpenFont( "lazy.ttf", 28 );
 
+    if( gFont == NULL )
+    {
+        printf( "Failed to load lazy font! SDL_ttf Error: %s\n", TTF_GetError() );
+        success = false;
+    }
+    else
+    {
+        //Render text
+        SDL_Color textColor = { 0, 0, 0 };
+        if( !gTextTexture.loadFromRenderedText( "The quick brown fox jumps over the lazy dog", textColor ) )
+        {
+            printf( "Failed to render text texture!\n" );
+            success = false;
+        }
+    }
+
+    return success;
 }
 
 void close()
 {
+    //Free loaded images
+    gTextTexture.free();
+
+    //Free global font
+    TTF_CloseFont( gFont );
+    gFont = NULL;
 
     //Destroy window
     SDL_DestroyRenderer( gRenderer );
@@ -256,6 +330,7 @@ void close()
     gRenderer = NULL;
 
     //Quit SDL subsystems
+    TTF_Quit();
     IMG_Quit();
     SDL_Quit();
 }
@@ -266,12 +341,15 @@ typedef struct
     //The X and Y offsets of the dot
     int mPosX, mPosY;
     int mDeltaX, mDeltaY;
+    int mS; // total distance (pixels) moved in any direction
 } dot_t;
 
 
 int lazy_main( int argc, char* args[] )
 {
+    char textbuf[256];
     dot_t dot;
+    dot.mS = 0;
     dot.mPosX = 1;
     dot.mPosY = 1;
     dot.mDeltaX = 0;
@@ -353,6 +431,10 @@ int lazy_main( int argc, char* args[] )
                         case SDLK_MINUS:
                             break;
 
+                        case SDLK_ESCAPE:
+                            quit = true;
+                            break;
+
                         default:
                             break;
                         }
@@ -394,13 +476,42 @@ int lazy_main( int argc, char* args[] )
                 if (tmp >= 0 && tmp < SCREEN_HEIGHT)
                     dot.mPosY = tmp;
 
+                if (dot.mPosX != oldX  ||  dot.mPosY != oldY )
+                    dot.mS += 1;
+
+                //Clear screen
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                SDL_RenderClear( gRenderer );
+
+
+
+                //Render X/Y text
+                SDL_Color textColor = { 0, 0, 0 };
+                sprintf(textbuf, "x=%d, y=%d", dot.mPosX , dot.mPosY);
+                if( !gTextTexture.loadFromRenderedText( textbuf, { 0, 0, 255 } ) )
+                {
+                    printf( "Failed to render text texture!\n" );
+                }
+                gTextTexture.render( SCREEN_WIDTH - gTextTexture.getWidth(),
+                                     SCREEN_HEIGHT - gTextTexture.getHeight() );
+
+
+                //Render Ds text
+                sprintf(textbuf, "dot.mS=%d", dot.mS);
+                if( !gTextTexture.loadFromRenderedText( textbuf, { 255, 0, 0 } ) )
+                {
+                    printf( "Failed to render text texture!\n" );
+                }
+                gTextTexture.render( ( SCREEN_WIDTH - gTextTexture.getWidth() ) / 2, ( SCREEN_HEIGHT - gTextTexture.getHeight() ) / 2 );
+
+
+                //Draw previous dot
+                SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0x00, 0xFF );
+                SDL_RenderDrawPoint( gRenderer, oldX, oldY );
+
                 //Draw dot
                 SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0x00, 0xFF );
                 SDL_RenderDrawPoint( gRenderer, dot.mPosX , dot.mPosY );
-
-                //erase last dot
-                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-//                SDL_RenderDrawPoint( gRenderer, oldX, oldY );
 
 
                 //Update screen
@@ -414,9 +525,7 @@ int lazy_main( int argc, char* args[] )
                     //Wait remaining time
                     SDL_Delay( SCREEN_TICK_PER_FRAME - frameTicks );
                 }
-
             }
-
         }
     }
 
