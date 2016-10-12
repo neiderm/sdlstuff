@@ -146,7 +146,7 @@ SDL_Surface *gSurface;
 static void close()
 {
 
-SDL_FreeSurface( gSurface ); // I guess
+    SDL_FreeSurface( gSurface ); // I guess
 
 
     //Free loaded images
@@ -207,15 +207,15 @@ int Create_Double_Buffer(int num_lines)
 
 #else
 
-SDL_Surface* SDL_CreateRGBSurfaceFrom(_ouble_buffer, // void*  pixels,
-                                      SCREEN_WIDTH, // int    width,
-                                      SCREEN_HEIGHT, // int    height,
-                                      32, // int    depth,
-                                      int    pitch,
-                                      Uint32 Rmask,
-                                      Uint32 Gmask,
-                                      Uint32 Bmask,
-                                      Uint32 Amask)
+    SDL_Surface* SDL_CreateRGBSurfaceFrom(_ouble_buffer, // void*  pixels,
+                                          SCREEN_WIDTH, // int    width,
+                                          SCREEN_HEIGHT, // int    height,
+                                          32, // int    depth,
+                                          int    pitch,
+                                          Uint32 Rmask,
+                                          Uint32 Gmask,
+                                          Uint32 Bmask,
+                                          Uint32 Amask)
 
 #endif
 
@@ -290,7 +290,7 @@ int wd_main( int argc, char* argv[] )
             bool pause_rotation = 0;
 
 
-SDL_Texture *newTexture;
+            SDL_Texture *newTexture;
 
 
             //While application is running
@@ -412,17 +412,23 @@ SDL_Texture *newTexture;
 
 
 
-        //Create texture from surface pixels
-        newTexture = SDL_CreateTextureFromSurface( gRenderer, gSurface );
+                SDL_Rect rect = {0, 0 , SCREEN_WIDTH, SCREEN_HEIGHT };
+                SDL_FillRect(gSurface,
+                             &rect,
+                             0x00FFFFFF);
 
 // now Draw_Object_Wire() etc or whatever other screen drawing
+
+
+                //Create texture from surface pixels
+                newTexture = SDL_CreateTextureFromSurface( gRenderer, gSurface );
 
 
                 // display double buffer
                 //Render texture to screen
                 SDL_RenderCopy( gRenderer, newTexture, NULL, NULL );
 
-SDL_DestroyTexture( newTexture ); // GN: idfk
+                SDL_DestroyTexture( newTexture ); // GN: idfk
 
 
 
