@@ -23,18 +23,12 @@
 //#include "black9.h"
 #include "black11.h"
 
-
-//The window renderer
-#include <SDL.h>
-extern SDL_Renderer* gRenderer; // TODO: nasty globals
-
-
 // G L O B A L S //////////////////////////////////////////////////////////////
 
 float  clip_near_z   = 100,        // the near or hither clipping plane
-       clip_far_z    = 3000,       // the far or yon clipping plane
-       screen_width  = 320,        // dimensions of the screen
-       screen_heigth = 200;
+       clip_far_z    = 3000;       // the far or yon clipping plane
+//       screen_width  = 320,        // dimensions of the screen
+//       screen_heigth = 200;
 
 int viewing_distance = 200;         // distance of projection plane from camera
 
@@ -587,9 +581,9 @@ void Draw_Top_Triangle(int x1,int y1, int x2,int y2, int x3,int y3,int color)
 
 
 // compute starting address in video memory
-#if 0 // GN:
+
     dest_addr = double_buffer+(y1<<8)+(y1<<6);
-#endif
+
 // test if x clipping is needed
 
     if (x1>=poly_clip_min_x && x1<=poly_clip_max_x &&
@@ -727,9 +721,9 @@ void Draw_Bottom_Triangle(int x1,int y1, int x2,int y2, int x3,int y3,int color)
         y3=poly_clip_max_y;
 
 // compute starting address in video memory
-#if 0 // GN:
+
     dest_addr = double_buffer+(y1<<8)+(y1<<6);
-#endif
+
 // test if x clipping is needed
 
     if (x1>=poly_clip_min_x && x1<=poly_clip_max_x &&
@@ -2768,13 +2762,13 @@ void Project_Polys(void)
 
 } // end Project_Polys
 
-//////////////////////////////////////////////////////////////////////////////
 
-void Draw_Line(int xo, int yo, int x1,int y1, unsigned char color,unsigned char *vb_start)
-{
+//////////////////////////////////////////////////////////////////////////////
 // this function draws a line from xo,yo to x1,y1 using differential error
 // terms (based on Bresenahams work)
-
+//
+void Draw_Line(int xo, int yo, int x1,int y1, unsigned char color,unsigned char *vb_start)
+{
     int dx,             // difference in x's
         dy,             // difference in y's
         x_inc,          // amount in pixel space to move during drawing
@@ -2783,10 +2777,7 @@ void Draw_Line(int xo, int yo, int x1,int y1, unsigned char color,unsigned char 
         index;          // used for looping
 
 // pre-compute first pixel address in video buffer
-
-    vb_start = vb_start + ((unsigned int)yo<<6) +
-               ((unsigned int)yo<<8) +
-               (unsigned int)xo;
+    vb_start = vb_start + (unsigned int)(yo * SCREEN_WIDTH) + (unsigned int)xo;
 
 // compute horizontal and vertical deltas
 
@@ -2811,12 +2802,12 @@ void Draw_Line(int xo, int yo, int x1,int y1, unsigned char color,unsigned char 
 
     if (dy>=0)
     {
-        y_inc = 320; // 320 bytes per line
+        y_inc = SCREEN_WIDTH;
 
     } // end if line is moving down
     else
     {
-        y_inc = -320;
+        y_inc = -SCREEN_WIDTH;
         dy    = -dy;  // need absolute value
 
     } // end else moving up
@@ -2825,7 +2816,6 @@ void Draw_Line(int xo, int yo, int x1,int y1, unsigned char color,unsigned char 
 
     if (dx>dy)
     {
-
         // draw the line
 
         for (index=0; index<=dx; index++)
@@ -2860,7 +2850,6 @@ void Draw_Line(int xo, int yo, int x1,int y1, unsigned char color,unsigned char 
     } // end if |slope| <= 1
     else
     {
-
         // draw the line
 
         for (index=0; index<=dy; index++)
@@ -2963,14 +2952,9 @@ void Draw_Object_Wire(object_ptr the_object)
 
             if (Clip_Line(&ix1,&iy1,&ix2,&iy2))
             {
-#if 0 // GN:
                 Draw_Line((int)ix1,(int)iy1,(int)ix2,(int)iy2,
                           (unsigned char)the_object->polys[curr_poly].color,
                           double_buffer);
-#else
-                SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0xFF, 0xFF );
-                SDL_RenderDrawLine( gRenderer, ix1, iy1, ix2, iy2 );
-#endif
 
             } // end if clip
 
@@ -3003,14 +2987,9 @@ void Draw_Object_Wire(object_ptr the_object)
 
         if (Clip_Line(&ix1,&iy1,&ix2,&iy2))
         {
-#if 0 // GN:
             Draw_Line((int)ix1,(int)iy1,(int)ix2,(int)iy2,
                       (unsigned char)the_object->polys[curr_poly].color,
                       double_buffer);
-#else
-                SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0xFF, 0xFF );
-                SDL_RenderDrawLine( gRenderer, ix1, iy1, ix2, iy2 );
-#endif
 
         } // end if clip
 

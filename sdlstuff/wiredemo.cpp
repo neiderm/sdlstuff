@@ -37,10 +37,10 @@ static void close();
 static SDL_Window* gWindow = NULL;
 
 //The window renderer
-extern SDL_Renderer* gRenderer; // TODO: nasty globals
+/* static */ SDL_Renderer* gRenderer;
 
 //Globally used font
-extern TTF_Font *gFont; // TODO: nasty globals
+/* static */ TTF_Font *gFont; // TODO: nasty globals
 
 //Rendered texture
 static LTexture gTextTexture;
@@ -139,15 +139,15 @@ static bool loadMedia()
 
 
 
-SDL_Surface *gSurface;
+static SDL_Surface *gSurface;
 
 
 
 static void close()
 {
-
-    SDL_FreeSurface( gSurface ); // I guess
-
+    /*
+        SDL_FreeSurface( gSurface ); // I guess
+    */
 
     //Free loaded images
     gTextTexture.free();
@@ -169,16 +169,28 @@ static void close()
 }
 
 
-
-unsigned int _ouble_buffer[SCREEN_WIDTH * (SCREEN_HEIGHT + 1)];
+// TODO: nasty globalz
+static unsigned char _ouble_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
 unsigned char *double_buffer;     // the double buffer
-unsigned int double_buffer_height;    // height of double buffer
-unsigned int double_buffer_size;      // total size of buffer in bytes
+unsigned int *video_buffer;
 
+// this functions copies the double buffer into the video buffer at the
+// starting y location
+//
+void Display_Double_Buffer(unsigned char *buffer,int y)
+{
+    int i;
 
+    for (i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++)
+    {
+        video_buffer[i] = double_buffer[i];
+
+        if (0 != double_buffer[i])  video_buffer[i] = 0xff; // TODO: palette LUT
+    }
+}
 
 //
-// must be called AFTER renderer is created!
+// must be called AFTER renderer is created if instantiating gSurface here !
 //
 int Create_Double_Buffer(int num_lines)
 {
@@ -190,35 +202,19 @@ int Create_Double_Buffer(int num_lines)
         return(0);
     }    // end if couldn't allocate
 #else
-//    double_buffer = _ouble_buffer;
+    double_buffer = _ouble_buffer;
 #endif
+
     // set the height of the buffer and compute it's size
-    double_buffer_height = num_lines;
-    double_buffer_size = SCREEN_WIDTH * num_lines/2;
+    num_lines = SCREEN_HEIGHT; // tmp
 
     // fill the buffer with black
     memset(double_buffer, 0, SCREEN_WIDTH * num_lines);
 
-
-
-#if 1
-    /* or using the default masks for the depth: */
+#if 0
+    /*  using the default masks for the depth: */
     gSurface = SDL_CreateRGBSurface(0,SCREEN_WIDTH,SCREEN_HEIGHT,32,0,0,0,0);
-
-#else
-
-    SDL_Surface* SDL_CreateRGBSurfaceFrom(_ouble_buffer, // void*  pixels,
-                                          SCREEN_WIDTH, // int    width,
-                                          SCREEN_HEIGHT, // int    height,
-                                          32, // int    depth,
-                                          int    pitch,
-                                          Uint32 Rmask,
-                                          Uint32 Gmask,
-                                          Uint32 Bmask,
-                                          Uint32 Amask)
-
 #endif
-
 
     // everything was ok
     return(1);
@@ -226,15 +222,20 @@ int Create_Double_Buffer(int num_lines)
 } // end Init_Double_Buffer
 
 
+// this function fills in the double buffer with the sent color
+//
+void Fill_Double_Buffer(int color)
+{
+    memset(double_buffer, color, SCREEN_WIDTH * SCREEN_HEIGHT);
+}
 
-object test_object;   // the test object
+
 
 
 
 int wd_main( int argc, char* argv[] )
 {
-    int index;   // looping variable
-    char buffer[80]; // used to print strings
+    object test_object;   // the test object
 
     // try this one first, if it fails, no other cleanup needed at this point
     if (!PLG_Load_Object(&test_object,argv[1],1))
@@ -263,12 +264,9 @@ int wd_main( int argc, char* argv[] )
             //The clock time when the timer started
             int mStartTicks;
 
-
             //Clear screen
             SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
             SDL_RenderClear( gRenderer );
-
-
 
             // position the object
             test_object.world_pos.x = 0;
@@ -278,11 +276,8 @@ int wd_main( int argc, char* argv[] )
             // create the sin/cos lookup tables used for the rotation function
             Build_Look_Up_Tables();
 
-
             // allocate double buffer
-            int h = 0; // tmp TODO
-            Create_Double_Buffer(h); // needs to be part of init() ... depends on height/width
-
+            Create_Double_Buffer(0); // height/width are fixed
 
             // set viewing distance
             viewing_distance = 250;
@@ -292,10 +287,14 @@ int wd_main( int argc, char* argv[] )
 
             SDL_Texture *newTexture;
 
+            int x = 0, y = 0; // tmp
 
             //While application is running
             while( !quit )
             {
+                int index;   // looping variable
+                char buffer[80]; // used to print strings
+
                 //Start cap timer
                 //Get the current clock time
                 mStartTicks = SDL_GetTicks(); // capTimer.start();
@@ -312,6 +311,8 @@ int wd_main( int argc, char* argv[] )
                     //User presses a key
                     else if( e.type == SDL_KEYDOWN )
                     {
+                        x += 1;
+                        y += 1;
                         switch( e.key.keysym.sym )
                         {
                         case SDLK_UP:
@@ -380,11 +381,9 @@ int wd_main( int argc, char* argv[] )
                 }
 
 
-
                 // rotate the object on all three axes
                 if (!pause_rotation)
                     Rotate_Object((object_ptr)&test_object,2,4,6);
-
 
                 // convert the local coordinates into camera coordinates for projection
                 // note the viewer is at (0,0,0) with angles 0,0,0 so the transformaton
@@ -404,38 +403,44 @@ int wd_main( int argc, char* argv[] )
                 } // end for index
 
 
-
-
                 //Clear screen
-                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-                SDL_RenderClear( gRenderer );
-
-
-
-                SDL_Rect rect = {0, 0 , SCREEN_WIDTH, SCREEN_HEIGHT };
-                SDL_FillRect(gSurface,
-                             &rect,
-                             0x00FFFFFF);
-
-// now Draw_Object_Wire() etc or whatever other screen drawing
-
-
-                //Create texture from surface pixels
-                newTexture = SDL_CreateTextureFromSurface( gRenderer, gSurface );
-
-
-                // display double buffer
-                //Render texture to screen
-                SDL_RenderCopy( gRenderer, newTexture, NULL, NULL );
-
-                SDL_DestroyTexture( newTexture ); // GN: idfk
-
-
+                /*
+                                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                                SDL_RenderClear( gRenderer );
+                */
+                // erase the screen
+                Fill_Double_Buffer(0);
 
                 // draw the object
                 Draw_Object_Wire((object_ptr)&test_object);
 
 
+// test code
+                if (x < SCREEN_WIDTH && y < SCREEN_HEIGHT)
+                    double_buffer[SCREEN_WIDTH * y + x] = 0xff;
+                if (x < SCREEN_WIDTH)
+                    Draw_Line(x, 0, x, SCREEN_HEIGHT,  x, double_buffer);
+                if (y < SCREEN_HEIGHT)
+                    Draw_Line(0, y, (SCREEN_WIDTH * 3) / 4, y,  0xff, double_buffer);
+
+
+
+                /*  using the default masks for the depth: */
+                gSurface = SDL_CreateRGBSurface(0,SCREEN_WIDTH,SCREEN_HEIGHT,32,0,0,0,0); // SDL_CreateRGBSurfaceFrom ????
+
+                video_buffer = (unsigned int *)gSurface->pixels;
+
+                Display_Double_Buffer(double_buffer,0);
+
+                //Create texture from surface pixels
+                newTexture = SDL_CreateTextureFromSurface( gRenderer, gSurface );
+
+                SDL_FreeSurface( gSurface ); // done with it now so free it
+
+                //Render texture to screen
+                SDL_RenderCopy( gRenderer, newTexture, NULL, NULL );
+
+                SDL_DestroyTexture( newTexture ); // GN: idfk
 
 
                 // print out position of object
@@ -448,10 +453,8 @@ int wd_main( int argc, char* argv[] )
                 {
                     printf( "Failed to render text texture!\n" );
                 }
-                int x = 0, y = 0;
-                gTextTexture.render( x, y );
 
-
+                gTextTexture.render( 0, 0 );
 
 
                 //Update screen
