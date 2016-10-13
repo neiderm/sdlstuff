@@ -169,10 +169,18 @@ static void close()
 }
 
 
+
 // TODO: nasty globalz
-static unsigned char _ouble_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+
+static int Color_registers[256];
+unsigned char Current_color = 0xff;
+
+//static unsigned char _ouble_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+static unsigned char _ouble_buffer[SCREEN_WIDTH * (SCREEN_HEIGHT + 1)];
 unsigned char *double_buffer;     // the double buffer
 unsigned int *video_buffer;
+
+unsigned char *junk ;
 
 // this functions copies the double buffer into the video buffer at the
 // starting y location
@@ -181,11 +189,18 @@ void Display_Double_Buffer(unsigned char *buffer,int y)
 {
     int i;
 
+junk =  &double_buffer[400 * SCREEN_WIDTH];
+int asdf = *(junk + 1);
+if (asdf != 0xa5)
+  printf("Invalide value at %X = %X\n", junk, asdf);
+
     for (i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++)
     {
         video_buffer[i] = double_buffer[i];
 
-        if (0 != double_buffer[i])  video_buffer[i] = 0xff; // TODO: palette LUT
+
+        // hack for wire demo, since the color is fixed to the PLG file somehow.
+        if (0 != double_buffer[i])  video_buffer[i] = Color_registers[Current_color]; //  0xff; // TODO: palette LUT
     }
 }
 
@@ -211,6 +226,9 @@ int Create_Double_Buffer(int num_lines)
     // fill the buffer with black
     memset(double_buffer, 0, SCREEN_WIDTH * num_lines);
 
+int junk = sizeof(_ouble_buffer);
+    memset(double_buffer, 0xa5, junk);
+
 #if 0
     /*  using the default masks for the depth: */
     gSurface = SDL_CreateRGBSurface(0,SCREEN_WIDTH,SCREEN_HEIGHT,32,0,0,0,0);
@@ -228,6 +246,34 @@ void Fill_Double_Buffer(int color)
 {
     memset(double_buffer, color, SCREEN_WIDTH * SCREEN_HEIGHT);
 }
+
+
+
+
+///////////////////////////////////////////////////////////////////////////////
+// this function will write to the color registers using the data in the
+// sen palette structure
+//
+void Write_Palette(int start_reg, int end_reg, RGB_palette_ptr the_palette)
+{
+
+    int index; // used for looping
+
+// write all the registers
+
+    for (index=start_reg; index<=end_reg; index++)
+    {
+        // write the color registers using the data from the sent palette
+
+//        Write_Color_Reg(index,(RGB_color_ptr)&(the_palette->colors[index]));
+          Color_registers[index] = 0x00000000;
+          // scale up the palette colors from 6-bits to 8-bits intensity
+          Color_registers[index] |= (the_palette->colors[index].red   * 4) << 16;
+          Color_registers[index] |= (the_palette->colors[index].green * 4) <<  8;
+          Color_registers[index] |= (the_palette->colors[index].blue  * 4) <<  0;
+    } // end for index
+
+} // end Write_Palette
 
 
 
@@ -264,14 +310,14 @@ int wd_main( int argc, char* argv[] )
             //The clock time when the timer started
             int mStartTicks;
 
+            bool pause_rotation = 0;
+
             //Clear screen
             SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
             SDL_RenderClear( gRenderer );
 
             // position the object
-            test_object.world_pos.x = 0;
-            test_object.world_pos.y = 0;
-            test_object.world_pos.z = 300;
+            Position_Object((object_ptr)&test_object,0,0,300);
 
             // create the sin/cos lookup tables used for the rotation function
             Build_Look_Up_Tables();
@@ -279,11 +325,14 @@ int wd_main( int argc, char* argv[] )
             // allocate double buffer
             Create_Double_Buffer(0); // height/width are fixed
 
+
+            // read the color palette off disk
+            Load_Palette_Disk("standard.pal",(RGB_palette_ptr)&color_palette_3d);
+            Write_Palette(0,255,(RGB_palette_ptr)&color_palette_3d);
+
+
             // set viewing distance
             viewing_distance = 250;
-
-            bool pause_rotation = 0;
-
 
             SDL_Texture *newTexture;
 
@@ -344,10 +393,12 @@ int wd_main( int argc, char* argv[] )
                             pause_rotation ^= 1;
                             break;
 
-                        case SDLK_PLUS:
+                        case SDLK_EQUALS: // SDLK_PLUS:
+                            Current_color += 1;
                             break;
 
                         case SDLK_MINUS:
+                            Current_color -= 1;
                             break;
 
                         case SDLK_ESCAPE:
@@ -444,7 +495,9 @@ int wd_main( int argc, char* argv[] )
 
 
                 // print out position of object
-                sprintf(buffer,"Object is at (%d,%d,%d)     ",(int)test_object.world_pos.x,
+                sprintf(buffer, "C=%d Object at (%d,%d,%d)",
+                        Current_color,
+                        (int)test_object.world_pos.x,
                         (int)test_object.world_pos.y,
                         (int)test_object.world_pos.z);
 
