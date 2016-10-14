@@ -76,7 +76,7 @@ int poly_clip_min_x = POLY_CLIP_MIN_X,
 sprite textures;                        // this holds the textures
 
 // F U N C T I O N S /////////////////////////////////////////////////////////
-#if 0 // GN:
+#if 1 // GN:
 void Make_Grey_Palette(void)
 {
 // this function generates 64 shades of grey and places them in the palette

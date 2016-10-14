@@ -236,6 +236,18 @@ void Fill_Double_Buffer(int color)
 }
 
 
+// this function is used to write a color register with the RGB value
+// within "color"
+//
+void Write_Color_Reg(int index, RGB_color_ptr color)
+{
+    Color_registers[index] = 0x00000000;
+    // scale up the palette colors from 6-bits to 8-bits intensity
+    Color_registers[index] |= color->red   * 4 << 16;
+    Color_registers[index] |= color->green * 4 <<  8;
+    Color_registers[index] |= color->blue  * 4 <<  0;
+}
+
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -245,23 +257,15 @@ void Fill_Double_Buffer(int color)
 void Write_Palette(int start_reg, int end_reg, RGB_palette_ptr the_palette)
 {
 
-    int index; // used for looping
+    int index;
 
 // write all the registers
-
     for (index=start_reg; index<=end_reg; index++)
     {
         // write the color registers using the data from the sent palette
-
-//        Write_Color_Reg(index,(RGB_color_ptr)&(the_palette->colors[index]));
-          Color_registers[index] = 0x00000000;
-          // scale up the palette colors from 6-bits to 8-bits intensity
-          Color_registers[index] |= (the_palette->colors[index].red   * 4) << 16;
-          Color_registers[index] |= (the_palette->colors[index].green * 4) <<  8;
-          Color_registers[index] |= (the_palette->colors[index].blue  * 4) <<  0;
-    } // end for index
-
-} // end Write_Palette
+        Write_Color_Reg(index,(RGB_color_ptr)&(the_palette->colors[index]));
+    }
+}
 
 
 /*
