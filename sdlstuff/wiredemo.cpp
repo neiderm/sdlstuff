@@ -319,7 +319,7 @@ int wd_main( int argc, char* argv[] )
 
 
             // read the color palette off disk
-            Load_Palette_Disk("standard.pal",(RGB_palette_ptr)&color_palette_3d);
+            Load_Palette_Disk("data/standard.pal",(RGB_palette_ptr)&color_palette_3d);
             Write_Palette(0,255,(RGB_palette_ptr)&color_palette_3d);
 
 

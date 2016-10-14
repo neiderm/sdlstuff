@@ -7,8 +7,8 @@ int wd_main( int argc, char* argv[] );
 
 int main( int argc, char* argv[] )
 {
-    char cube[] = "CUBEW.PLG";
-    char pyrmd[] = "PYRAMIDW.PLG";
+    char cube[] = "data/CUBEW.PLG";
+    char pyrmd[] = "data/PYRAMIDW.PLG";
     char *args[2] = { "junk" }; // make sure args[0] is something
     args[1] = cube;
     wd_main(argc, args);
