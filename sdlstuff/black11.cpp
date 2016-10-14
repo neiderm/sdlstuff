@@ -472,6 +472,14 @@ void Triangle_Line(unsigned char *dest_addr,
                    unsigned int xe,
                    int color)
 {
+    // GN: we can do this the easy way, TODO: range checking?
+    int i;
+    for (i=xs; i<=xe; i++)
+    {
+        *(dest_addr + i) = color;
+    }
+    return;
+
 
 // this function draws a fast horizontal line by using WORD size writes
 // it's speed can be doubled by use of an external 32 bit DWORD version in
@@ -582,8 +590,8 @@ void Draw_Top_Triangle(int x1,int y1, int x2,int y2, int x3,int y3,int color)
 
 
 // compute starting address in video memory
+    dest_addr = double_buffer+(y1*SCREEN_WIDTH);
 
-    dest_addr = double_buffer+(y1<<8)+(y1<<6);
 
 // test if x clipping is needed
 
@@ -593,7 +601,7 @@ void Draw_Top_Triangle(int x1,int y1, int x2,int y2, int x3,int y3,int color)
     {
         // draw the triangle
 
-        for (temp_y=y1; temp_y<=y3; temp_y++,dest_addr+=320)
+        for (temp_y=y1; temp_y<=y3; temp_y++,dest_addr+=SCREEN_WIDTH)
         {
 
             Triangle_Line(dest_addr,(unsigned int)xs,(unsigned int)xe,color);
@@ -617,7 +625,7 @@ void Draw_Top_Triangle(int x1,int y1, int x2,int y2, int x3,int y3,int color)
 
         // draw the triangle
 
-        for (temp_y=y1; temp_y<=y3; temp_y++,dest_addr+=320)
+        for (temp_y=y1; temp_y<=y3; temp_y++,dest_addr+=SCREEN_WIDTH)
         {
 
             // do x clip
@@ -722,8 +730,8 @@ void Draw_Bottom_Triangle(int x1,int y1, int x2,int y2, int x3,int y3,int color)
         y3=poly_clip_max_y;
 
 // compute starting address in video memory
+    dest_addr = double_buffer+(y1*SCREEN_WIDTH);
 
-    dest_addr = double_buffer+(y1<<8)+(y1<<6);
 
 // test if x clipping is needed
 
@@ -733,7 +741,7 @@ void Draw_Bottom_Triangle(int x1,int y1, int x2,int y2, int x3,int y3,int color)
     {
         // draw the triangle
 
-        for (temp_y=y1; temp_y<=y3; temp_y++,dest_addr+=320)
+        for (temp_y=y1; temp_y<=y3; temp_y++,dest_addr+=SCREEN_WIDTH)
         {
 
             Triangle_Line(dest_addr,(unsigned int)xs,(unsigned int)xe,color);
@@ -756,7 +764,7 @@ void Draw_Bottom_Triangle(int x1,int y1, int x2,int y2, int x3,int y3,int color)
 
         // draw the triangle
 
-        for (temp_y=y1; temp_y<=y3; temp_y++,dest_addr+=320)
+        for (temp_y=y1; temp_y<=y3; temp_y++,dest_addr+=SCREEN_WIDTH)
         {
             // do x clip
 

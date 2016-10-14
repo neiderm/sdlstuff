@@ -268,6 +268,21 @@ void Write_Palette(int start_reg, int end_reg, RGB_palette_ptr the_palette)
 } // end Write_Palette
 
 
+/*
+* tmp data structure for saving triangle
+*/
+typedef struct pnt2d_t
+{
+  int x;
+  int y;
+} t_pnt2d;
+typedef struct mytri_t
+{
+  t_pnt2d p0;
+  t_pnt2d p1;
+  t_pnt2d p2;
+  int clr;
+} t_mytri;
 
 
 
@@ -326,19 +341,33 @@ int wd_main( int argc, char* argv[] )
             // set viewing distance
             viewing_distance = 250;
 
-            SDL_Texture *newTexture;
 
-            int x = 0, y = 0; // tmp
+
+            int line_x = 0, line_y = 0; // test 2d lines
+            mytri_t gtri; // test the 2d triangle
 
             //While application is running
             while( !quit )
             {
+                SDL_Texture *newTexture;
+
                 int index;   // looping variable
                 char buffer[80]; // used to print strings
 
                 //Start cap timer
                 //Get the current clock time
                 mStartTicks = SDL_GetTicks(); // capTimer.start();
+
+
+
+                //Clear screen
+                /*
+                                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+                                SDL_RenderClear( gRenderer );
+                */
+                // erase the screen
+                Fill_Double_Buffer(0);
+
 
 
                 //Handle events on queue
@@ -352,8 +381,9 @@ int wd_main( int argc, char* argv[] )
                     //User presses a key
                     else if( e.type == SDL_KEYDOWN )
                     {
-                        x += 1;
-                        y += 1;
+                        line_x += 1;
+                        line_y += 1;
+
                         switch( e.key.keysym.sym )
                         {
                         case SDLK_UP:
@@ -395,6 +425,16 @@ int wd_main( int argc, char* argv[] )
 
                         case SDLK_ESCAPE:
                             quit = true;
+                            break;
+
+                        case SDLK_t:
+                            gtri.p0.x = rand()%SCREEN_WIDTH;
+                            gtri.p0.y = rand()%SCREEN_HEIGHT;
+                            gtri.p1.x = rand()%SCREEN_WIDTH;
+                            gtri.p1.y = rand()%SCREEN_HEIGHT;
+                            gtri.p2.x = rand()%SCREEN_WIDTH;
+                            gtri.p2.y = rand()%SCREEN_HEIGHT;
+                            gtri.clr = rand()%256;
                             break;
 
                         default:
@@ -446,23 +486,20 @@ int wd_main( int argc, char* argv[] )
                 } // end for index
 
 
-                //Clear screen
-                /*
-                                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
-                                SDL_RenderClear( gRenderer );
-                */
-                // erase the screen
-                Fill_Double_Buffer(0);
+                // draw the 2d triangle at its current location
+                Draw_Triangle_2D(gtri.p0.x , gtri.p0.y,
+                      gtri.p1.x , gtri.p1.y,
+                      gtri.p2.x , gtri.p2.y,
+                      gtri.clr);
 
-                // draw the object
+                // draw the wireframe object
                 Draw_Object_Wire((object_ptr)&test_object);
 
-
-// test code
-                if (x < SCREEN_WIDTH)
-                    Draw_Line(x, 0, x, SCREEN_HEIGHT,  0xba, double_buffer); // ha ha should be (SCREEN_HEIGHT-1)
-                if (y < SCREEN_HEIGHT)
-                    Draw_Line(0, y, (SCREEN_WIDTH * 3) / 4, y,  0xab, double_buffer);
+                // draw some 2d lines
+                if (line_x < SCREEN_WIDTH)
+                    Draw_Line(line_x, 0, line_x, SCREEN_HEIGHT,  0xba, double_buffer); // ha ha should be (SCREEN_HEIGHT-1)
+                if (line_y < SCREEN_HEIGHT)
+                    Draw_Line(0, line_y, (SCREEN_WIDTH * 3) / 4, line_y,  0xab, double_buffer);
 
 
 

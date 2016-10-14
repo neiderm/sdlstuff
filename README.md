@@ -1,5 +1,5 @@
-Trying to remember how to do 3D rendering in software and starting looking
- at the classic book "Black Art of 3D Game Programming".
+Trying to remember how to do 3D rendering in software and looking
+ at the classic book "Black Art of 3D Game Programming": 
   http://www.goodreads.com/book/show/1126317.Black_Art_of_3D_Game_Programming
 Reading this book (about 20 years ago!) was my first foray into C language!
 Example code from BAo3DGP is all DOS based, with hard-coded reference to
@@ -11,3 +11,8 @@ from excellent Lazy Foo tutorials:
 The resulting code in this repository uses examples from Lazy Foo to adapt 
 the BAo3DGP algorithms to SDL2. Dev OS is Linux/Xubuntu, build environment
 is GCC using Code::Blocks. Enjoy! -GN
+Next ones to look at might be 
+ https://github.com/ssloy/tinyrenderer/wiki
+ https://fgiesen.wordpress.com/2011/07/09/a-trip-through-the-graphics-pipeline-2011-index/ 
+ 
+
