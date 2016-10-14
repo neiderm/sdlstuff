@@ -191,11 +191,7 @@ void Display_Double_Buffer(unsigned char *buffer,int y)
 
     for (i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++)
     {
-        video_buffer[i] = double_buffer[i];
-
-
-        // hack for wire demo, since the color is fixed to the PLG file somehow.
-        if (0 != double_buffer[i])  video_buffer[i] = Color_registers[Current_color]; //  0xff; // TODO: palette LUT
+        video_buffer[i] = Color_registers[ double_buffer[i] ];
     }
 }
 
@@ -317,7 +313,9 @@ int wd_main( int argc, char* argv[] )
             //The clock time when the timer started
             int mStartTicks;
 
-            bool pause_rotation = 0;
+            bool pause_rotation = 1;
+            bool draw_frame = true; // for testing/debugging, only refresh if 'r' key
+
 
             //Clear screen
             SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
@@ -344,6 +342,7 @@ int wd_main( int argc, char* argv[] )
 
 
             int line_x = 0, line_y = 0; // test 2d lines
+            int xr, yr, zr;
             mytri_t gtri; // test the 2d triangle
 
             //While application is running
@@ -368,7 +367,9 @@ int wd_main( int argc, char* argv[] )
                 // erase the screen
                 Fill_Double_Buffer(0);
 
-
+                xr = 0;
+                yr = 0;
+                zr = 0;
 
                 //Handle events on queue
                 while( SDL_PollEvent( &e ) != 0 )
@@ -415,6 +416,22 @@ int wd_main( int argc, char* argv[] )
                             pause_rotation ^= 1;
                             break;
 
+                        case SDLK_r:
+                            draw_frame = true;
+                            break;
+
+                        case SDLK_x:
+                            xr = 2;
+                            break;
+
+                        case SDLK_y:
+                            yr = 2;
+                            break;
+
+                        case SDLK_z:
+                            zr = 2;
+                            break;
+
                         case SDLK_EQUALS: // SDLK_PLUS:
                             Current_color += 1;
                             break;
@@ -434,7 +451,7 @@ int wd_main( int argc, char* argv[] )
                             gtri.p1.y = rand()%SCREEN_HEIGHT;
                             gtri.p2.x = rand()%SCREEN_WIDTH;
                             gtri.p2.y = rand()%SCREEN_HEIGHT;
-                            gtri.clr = rand()%256;
+                            gtri.clr = Current_color; // rand()%256;
                             break;
 
                         default:
@@ -464,9 +481,15 @@ int wd_main( int argc, char* argv[] )
                 }
 
 
+/*
+                if (!draw_frame)
+                    continue;
+                draw_frame = false;
+*/
+
                 // rotate the object on all three axes
-                if (!pause_rotation)
-                    Rotate_Object((object_ptr)&test_object,2,4,6);
+//                if (!pause_rotation)
+                    Rotate_Object((object_ptr)&test_object, xr, yr, zr);
 
                 // convert the local coordinates into camera coordinates for projection
                 // note the viewer is at (0,0,0) with angles 0,0,0 so the transformaton
@@ -483,17 +506,30 @@ int wd_main( int argc, char* argv[] )
                     test_object.vertices_camera[index].z =
                         test_object.vertices_local[index].z+test_object.world_pos.z;
 
+                    test_object.vertices_world[index].x =
+                        test_object.vertices_camera[index].x;
+                    test_object.vertices_world[index].y =
+                        test_object.vertices_camera[index].y;
+                    test_object.vertices_world[index].z =
+                        test_object.vertices_camera[index].z;
                 } // end for index
 
 
                 // draw the 2d triangle at its current location
-                Draw_Triangle_2D(gtri.p0.x , gtri.p0.y,
-                      gtri.p1.x , gtri.p1.y,
-                      gtri.p2.x , gtri.p2.y,
+                Draw_Triangle_2D(gtri.p0.x, gtri.p0.y,
+                      gtri.p1.x, gtri.p1.y,
+                      gtri.p2.x, gtri.p2.y,
                       gtri.clr);
 
+#if 1
+                // shade and remove backfaces, ignore the backface part for now
+                Remove_Backfaces_And_Shade((object_ptr)&test_object);
+                // draw the object
+                Draw_Object_Solid((object_ptr)&test_object);
+#else
                 // draw the wireframe object
                 Draw_Object_Wire((object_ptr)&test_object);
+#endif //
 
                 // draw some 2d lines
                 if (line_x < SCREEN_WIDTH)
