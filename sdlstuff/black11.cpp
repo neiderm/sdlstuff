@@ -12,6 +12,7 @@
 #include <math.h>
 #include <string.h>
 #include <search.h>             // this one is needed for qsort()
+#include <sys/param.h>  // MIN/MAX
 
 // include all of our stuff
 
@@ -2775,6 +2776,14 @@ void Draw_Line(int xo, int yo, int x1,int y1, unsigned char color,unsigned char 
         y_inc,          // amount in pixel space to move during drawing
         error=0,        // the discriminant i.e. error i.e. decision variable
         index;          // used for looping
+
+    if ( xo < 0 || yo < 0 || x1 > (SCREEN_WIDTH-1) || y1 > (SCREEN_HEIGHT-1) )
+        printf("Warning: Draw_Line out of range (%d,%d:%d,%d)\n");
+
+    xo = MAX(xo, 0);
+    yo = MAX(yo, 0);
+    x1 = MIN(x1, (SCREEN_WIDTH - 1));
+    y1 = MIN(y1, (SCREEN_HEIGHT - 1));
 
 // pre-compute first pixel address in video buffer
     vb_start = vb_start + (unsigned int)(yo * SCREEN_WIDTH) + (unsigned int)xo;

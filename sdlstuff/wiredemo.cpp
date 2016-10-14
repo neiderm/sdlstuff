@@ -173,14 +173,14 @@ static void close()
 // TODO: nasty globalz
 
 static int Color_registers[256];
-unsigned char Current_color = 0xff;
+static unsigned char Current_color = 0xff;
 
-//static unsigned char _ouble_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
-static unsigned char _ouble_buffer[SCREEN_WIDTH * (SCREEN_HEIGHT + 1)];
+static unsigned char _ouble_buffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+
 unsigned char *double_buffer;     // the double buffer
 unsigned int *video_buffer;
 
-unsigned char *junk ;
+
 
 // this functions copies the double buffer into the video buffer at the
 // starting y location
@@ -188,11 +188,6 @@ unsigned char *junk ;
 void Display_Double_Buffer(unsigned char *buffer,int y)
 {
     int i;
-
-junk =  &double_buffer[400 * SCREEN_WIDTH];
-int asdf = *(junk + 1);
-if (asdf != 0xa5)
-  printf("Invalide value at %X = %X\n", junk, asdf);
 
     for (i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; i++)
     {
@@ -225,9 +220,6 @@ int Create_Double_Buffer(int num_lines)
 
     // fill the buffer with black
     memset(double_buffer, 0, SCREEN_WIDTH * num_lines);
-
-int junk = sizeof(_ouble_buffer);
-    memset(double_buffer, 0xa5, junk);
 
 #if 0
     /*  using the default masks for the depth: */
@@ -467,12 +459,10 @@ int wd_main( int argc, char* argv[] )
 
 
 // test code
-                if (x < SCREEN_WIDTH && y < SCREEN_HEIGHT)
-                    double_buffer[SCREEN_WIDTH * y + x] = 0xff;
                 if (x < SCREEN_WIDTH)
-                    Draw_Line(x, 0, x, SCREEN_HEIGHT,  x, double_buffer);
+                    Draw_Line(x, 0, x, SCREEN_HEIGHT,  0xba, double_buffer); // ha ha should be (SCREEN_HEIGHT-1)
                 if (y < SCREEN_HEIGHT)
-                    Draw_Line(0, y, (SCREEN_WIDTH * 3) / 4, y,  0xff, double_buffer);
+                    Draw_Line(0, y, (SCREEN_WIDTH * 3) / 4, y,  0xab, double_buffer);
 
 
 
