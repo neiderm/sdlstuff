@@ -76,7 +76,7 @@ int poly_clip_min_x = POLY_CLIP_MIN_X,
 sprite textures;                        // this holds the textures
 
 // F U N C T I O N S /////////////////////////////////////////////////////////
-#if 1 // GN:
+
 void Make_Grey_Palette(void)
 {
 // this function generates 64 shades of grey and places them in the palette
@@ -104,7 +104,7 @@ void Make_Grey_Palette(void)
     } // end for index
 
 } // end Make_Grey_Palette
-#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 
 void Draw_Triangle_2D_Text(int x1,int y1,
@@ -473,7 +473,7 @@ void Triangle_Line(unsigned char *dest_addr,
                    int color)
 {
     // GN: we can do this the easy way, TODO: range checking?
-    int i;
+    unsigned int i;
     for (i=xs; i<=xe; i++)
     {
         *(dest_addr + i) = color;
@@ -2786,7 +2786,7 @@ void Draw_Line(int xo, int yo, int x1,int y1, unsigned char color,unsigned char 
         index;          // used for looping
 
     if ( xo < 0 || yo < 0 || x1 > (SCREEN_WIDTH-1) || y1 > (SCREEN_HEIGHT-1) )
-        printf("Warning: Draw_Line out of range (%d,%d:%d,%d)\n");
+        printf("Warning: Draw_Line out of range (%d,%d:%d,%d)\n", xo, yo, x1, y1);
 
     xo = MAX(xo, 0);
     yo = MAX(yo, 0);
@@ -3373,45 +3373,35 @@ void Sort_Poly_List(void)
 } // end Sort_Poly_List
 
 ///////////////////////////////////////////////////////////////////////////////
-
+// this function loads a color palette from disk
+//
 int Load_Palette_Disk(char *filename, RGB_palette_ptr the_palette)
 {
-// this function loads a color palette from disk
-
-    int index; // used for looping
-
-    RGB_color color;
-
+    int index;
     FILE *fp;
 
 // open the disk file
-
     if (!(fp = fopen(filename,"r")))
         return(0);
 
 // load in all the colors
-
     for (index=0; index<=255; index++)
     {
+        int r, g, b;
         // get the next color
-
-        fscanf(fp,"%d %d %d",&color.red,&color.green,&color.blue);
+        fscanf(fp,"%d %d %d",&r, &g, &b);
 
         // store the color in next element of palette
-
-        the_palette->colors[index].red   = color.red;
-        the_palette->colors[index].green = color.green;
-        the_palette->colors[index].blue  = color.blue;
-
+        the_palette->colors[index].red   = r;
+        the_palette->colors[index].green = g;
+        the_palette->colors[index].blue  = b;
     } // end for index
 
 // set palette size to a full palette
-
     the_palette->start_reg = 0;
     the_palette->end_reg   = 255;
 
 // close the file and return success
-
     fclose(fp);
 
     return(1);
