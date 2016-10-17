@@ -1,17 +1,12 @@
 // I N C L U D E S ///////////////////////////////////////////////////////////
 
-//#include <io.h>
-//#include <conio.h>
 #include <stdio.h>
 #include <stdlib.h>
-//#include <dos.h>
-//#include <bios.h>
 #include <fcntl.h>
 #include <memory.h>
 #include <malloc.h>
 #include <math.h>
 #include <string.h>
-#include <search.h>             // this one is needed for qsort()
 #include <sys/param.h>  // MIN/MAX
 
 // include all of our stuff
@@ -3360,15 +3355,12 @@ void Print_Poly_List(void)
 } // end Print_Poly_List
 
 //////////////////////////////////////////////////////////////////////////////
-
-void Sort_Poly_List(void)
-{
 // this function does a simple z sort on the poly list to order surfaces
 // the list is sorted in descending order, i.e. farther polygons first
-
-#if 0 // GN: TODO
-    qsort((void *)world_polys, num_polys_frame, sizeof(facet_ptr), Poly_Compare);
-#endif
+//
+void Sort_Poly_List(void)
+{
+    qsort((void *)world_polys, num_polys_frame, sizeof(facet_ptr), (__compar_fn_t)Poly_Compare);
 
 } // end Sort_Poly_List
 
