@@ -46,6 +46,9 @@ static SDL_Window* gWindow = NULL;
 static LTexture gTextTexture;
 
 
+extern dir_3d view_angle;
+
+
 
 static bool init()
 {
@@ -215,7 +218,7 @@ int Create_Double_Buffer(int num_lines)
     num_lines = SCREEN_HEIGHT; // tmp
 
     // fill the buffer with black
-    memset(double_buffer, 0, SCREEN_WIDTH * num_lines);
+    memset(double_buffer, 0xab, SCREEN_WIDTH * num_lines);
 
 #if 0
     /*  using the default masks for the depth: */
@@ -273,15 +276,15 @@ void Write_Palette(int start_reg, int end_reg, RGB_palette_ptr the_palette)
 */
 typedef struct pnt2d_t
 {
-  int x;
-  int y;
+    int x;
+    int y;
 } t_pnt2d;
 typedef struct mytri_t
 {
-  t_pnt2d p0;
-  t_pnt2d p1;
-  t_pnt2d p2;
-  int clr;
+    t_pnt2d p0;
+    t_pnt2d p1;
+    t_pnt2d p2;
+    int clr;
 } t_mytri;
 
 
@@ -327,6 +330,13 @@ int wd_main( int argc, char* argv[] )
 
             // position the object
             Position_Object((object_ptr)&test_object,0,0,300);
+
+
+// set the viewpoint
+            view_point.x = 0;
+            view_point.y = 0;
+            view_point.z = 0;
+
 
             // create the sin/cos lookup tables used for the rotation function
             Build_Look_Up_Tables();
@@ -392,29 +402,60 @@ int wd_main( int argc, char* argv[] )
                         switch( e.key.keysym.sym )
                         {
                         case SDLK_UP:
-                            test_object.world_pos.y-=5;
+                            view_point.y+=5;
                             break;
 
                         case SDLK_DOWN:
-                            test_object.world_pos.y+=5;
-                            break;
-
-                        case SDLK_LEFT:
-                            test_object.world_pos.x-=5;
+                            view_point.y-=5;
                             break;
 
                         case SDLK_RIGHT:
+                            view_point.x+=5;
+                            break;
 
-                            test_object.world_pos.x+=5;
+                        case SDLK_LEFT:
+                            view_point.x-=5;
                             break;
 
                         case SDLK_PAGEUP:
-                            test_object.world_pos.z+=15;
+                            view_point.z+=5;
                             break;
 
                         case SDLK_PAGEDOWN:
-                            test_object.world_pos.z-=15;
+                            view_point.z-=5;
                             break;
+
+
+                        case SDLK_z:
+                            if ((view_angle.ang_x+=5)>360)
+                                view_angle.ang_x = 0;
+                            break;
+
+                        case SDLK_a:
+                            if ((view_angle.ang_x-=5)<0)
+                                view_angle.ang_x = 360;
+                            break;
+
+                        case SDLK_x:
+                            if ((view_angle.ang_y+=5)>360)
+                                view_angle.ang_y = 0;
+                            break;
+
+                        case SDLK_s:
+                            if ((view_angle.ang_y-=5)<0)
+                                view_angle.ang_y = 360;
+                            break;
+
+                        case SDLK_c:
+                            if ((view_angle.ang_z+=5)>360)
+                                view_angle.ang_z = 0;
+                            break;
+
+                        case SDLK_d:
+                            if ((view_angle.ang_z-=5)<0)
+                                view_angle.ang_z = 360;
+                            break;
+
 
                         case SDLK_p:
                             pause_rotation ^= 1;
@@ -423,7 +464,7 @@ int wd_main( int argc, char* argv[] )
                         case SDLK_r:
                             draw_frame = true;
                             break;
-
+#if 0
                         case SDLK_x:
                             xr = 2;
                             break;
@@ -435,6 +476,7 @@ int wd_main( int argc, char* argv[] )
                         case SDLK_z:
                             zr = 2;
                             break;
+#endif
 
                         case SDLK_EQUALS: // SDLK_PLUS:
                             Current_color += 1;
@@ -485,15 +527,15 @@ int wd_main( int argc, char* argv[] )
                 }
 
 
-/*
-                if (!draw_frame)
-                    continue;
-                draw_frame = false;
-*/
+                /*
+                                if (!draw_frame)
+                                    continue;
+                                draw_frame = false;
+                */
 
                 // rotate the object on all three axes
 //                if (!pause_rotation)
-                    Rotate_Object((object_ptr)&test_object, xr, yr, zr);
+                Rotate_Object((object_ptr)&test_object, xr, yr, zr);
 
                 // convert the local coordinates into camera coordinates for projection
                 // note the viewer is at (0,0,0) with angles 0,0,0 so the transformaton
@@ -521,13 +563,24 @@ int wd_main( int argc, char* argv[] )
 
                 // draw the 2d triangle at its current location
                 Draw_Triangle_2D(gtri.p0.x, gtri.p0.y,
-                      gtri.p1.x, gtri.p1.y,
-                      gtri.p2.x, gtri.p2.y,
-                      gtri.clr);
+                                 gtri.p1.x, gtri.p1.y,
+                                 gtri.p2.x, gtri.p2.y,
+                                 gtri.clr);
 
 #if 1
+                // convert to world coordinates
+                Local_To_World_Object((object_ptr)&test_object);
+
                 // shade and remove backfaces, ignore the backface part for now
+                // notice that backface shadin and backface removal is done in world coordinates
                 Remove_Backfaces_And_Shade((object_ptr)&test_object);
+
+                // create the global world to camera transformation matrix
+                Create_World_To_Camera();
+
+                // convert to camera coordinates
+                World_To_Camera_Object((object_ptr)&test_object);
+
                 // draw the object
                 Draw_Object_Solid((object_ptr)&test_object);
 #else
