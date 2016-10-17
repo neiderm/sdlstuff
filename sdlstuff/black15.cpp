@@ -621,7 +621,7 @@ void Draw_Poly_List_Z(void)
 } // end Draw_Poly_List_Z
 
 ////////////////////////////////////////////////////////////////////////////////
-#if 0  // GN:
+
 int Create_Z_Buffer(unsigned int height)
 {
 // this function allocates the z buffer in two banks
@@ -670,8 +670,8 @@ void Delete_Z_Buffer(void)
 void Fill_Z_Buffer(int value)
 {
 // this function fills the entire z buffer (both banks) with the sent value
-memset(z_bank_1, bank_size);
-memset(z_bank_2, bank_size);
+//memset(z_bank_1, bank_size);
+//memset(z_bank_2, bank_size);
 #if 0
     _asm
     {
@@ -707,7 +707,7 @@ memset(z_bank_2, bank_size);
     } // end asm
 #endif
 } // end Fill_Z_Buffer
-#endif // GN:
+
 ///////////////////////////////////////////////////////////////////////////////
 
 void Bsp_World_To_Camera(wall_ptr root)
