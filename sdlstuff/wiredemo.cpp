@@ -291,11 +291,22 @@ typedef struct mytri_t
 
 int wd_main( int argc, char* argv[] )
 {
-    object test_object;   // the test object
+    object test_object[4];   // the test object
+    int index;
 
-    // try this one first, if it fails, no other cleanup needed at this point
-    if (!PLG_Load_Object(&test_object,argv[1],1))
-        return 1; // epic fail
+// load in the objects from the command line
+    for (index=0; index<4; index++)
+    {
+        if (!PLG_Load_Object((object_ptr)&test_object[index],argv[1],1))
+        {
+            printf("\nCouldn't find file %s",argv[1]);
+            return 1;
+
+        } // end if
+
+    } // end for index
+
+
 
     //Start up SDL and create window
     if( !init() )
@@ -329,7 +340,8 @@ int wd_main( int argc, char* argv[] )
             SDL_RenderClear( gRenderer );
 
             // position the object
-            Position_Object((object_ptr)&test_object,0,0,300);
+            for (index=0; index<4; index++)
+                Position_Object((object_ptr)&test_object[index],-150+index*100,0,300);
 
 
 // set the viewpoint
@@ -364,7 +376,6 @@ int wd_main( int argc, char* argv[] )
             {
                 SDL_Texture *newTexture;
 
-                int index;   // looping variable
                 char buffer[80]; // used to print strings
 
                 //Start cap timer
@@ -533,60 +544,11 @@ int wd_main( int argc, char* argv[] )
                                 draw_frame = false;
                 */
 
-                // rotate the object on all three axes
-//                if (!pause_rotation)
-                Rotate_Object((object_ptr)&test_object, xr, yr, zr);
-
-                // convert the local coordinates into camera coordinates for projection
-                // note the viewer is at (0,0,0) with angles 0,0,0 so the transformaton
-                // is simply to add the world position to each local vertex
-
-                for (index=0; index<test_object.num_vertices; index++)
-                {
-                    test_object.vertices_camera[index].x =
-                        test_object.vertices_local[index].x+test_object.world_pos.x;
-
-                    test_object.vertices_camera[index].y =
-                        test_object.vertices_local[index].y+test_object.world_pos.y;
-
-                    test_object.vertices_camera[index].z =
-                        test_object.vertices_local[index].z+test_object.world_pos.z;
-
-                    test_object.vertices_world[index].x =
-                        test_object.vertices_camera[index].x;
-                    test_object.vertices_world[index].y =
-                        test_object.vertices_camera[index].y;
-                    test_object.vertices_world[index].z =
-                        test_object.vertices_camera[index].z;
-                } // end for index
-
-
                 // draw the 2d triangle at its current location
                 Draw_Triangle_2D(gtri.p0.x, gtri.p0.y,
                                  gtri.p1.x, gtri.p1.y,
                                  gtri.p2.x, gtri.p2.y,
                                  gtri.clr);
-
-#if 1
-                // convert to world coordinates
-                Local_To_World_Object((object_ptr)&test_object);
-
-                // shade and remove backfaces, ignore the backface part for now
-                // notice that backface shadin and backface removal is done in world coordinates
-                Remove_Backfaces_And_Shade((object_ptr)&test_object);
-
-                // create the global world to camera transformation matrix
-                Create_World_To_Camera();
-
-                // convert to camera coordinates
-                World_To_Camera_Object((object_ptr)&test_object);
-
-                // draw the object
-                Draw_Object_Solid((object_ptr)&test_object);
-#else
-                // draw the wireframe object
-                Draw_Object_Wire((object_ptr)&test_object);
-#endif //
 
                 // draw some 2d lines
                 if (line_x < SCREEN_WIDTH)
@@ -594,6 +556,38 @@ int wd_main( int argc, char* argv[] )
                 if (line_y < SCREEN_HEIGHT)
                     Draw_Line(0, line_y, (SCREEN_WIDTH * 3) / 4, line_y,  0xab, double_buffer);
 
+
+                // rotate the object on all three axes
+//                if (!pause_rotation)
+//                  Rotate_Object((object_ptr)&test_object, xr, yr, zr);
+
+                // create the global world to camera transformation matrix
+                Create_World_To_Camera();
+
+                for (index=0; index<4; index++)
+                {
+                    // test if this object should be processed
+                    if (!Remove_Object(&test_object[index],OBJECT_CULL_XYZ_MODE))
+                    {
+                        // convert to world coordinates
+                        Local_To_World_Object((object_ptr)&test_object[index]);
+
+                        // shade and remove backfaces, ignore the backface part for now
+                        // notice that backface shadin and backface removal is done in world coordinates
+                        Remove_Backfaces_And_Shade((object_ptr)&test_object[index]);
+
+                        // convert to camera coordinates
+                        World_To_Camera_Object((object_ptr)&test_object[index]);
+
+                        // draw the object
+                        Draw_Object_Solid((object_ptr)&test_object[index]);
+
+                    } // end if object is visible
+                    else
+                    {
+                        sprintf(buffer,"%d, ",index);
+                    }
+                } // end for index
 
 
                 /*  using the default masks for the depth: */
@@ -615,11 +609,7 @@ int wd_main( int argc, char* argv[] )
 
 
                 // print out position of object
-                sprintf(buffer, "C=%d Object at (%d,%d,%d)",
-                        Current_color,
-                        (int)test_object.world_pos.x,
-                        (int)test_object.world_pos.y,
-                        (int)test_object.world_pos.z);
+                sprintf(buffer, "C=%d", Current_color);
 
                 //Render text
                 if( !gTextTexture.loadFromRenderedText( buffer, { 255, 0, 0 } ) )
