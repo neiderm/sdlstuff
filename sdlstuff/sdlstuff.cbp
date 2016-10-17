@@ -42,6 +42,8 @@
 		</Linker>
 		<Unit filename="black11.cpp" />
 		<Unit filename="black11.h" />
+		<Unit filename="black15.cpp" />
+		<Unit filename="black15.h" />
 		<Unit filename="black3.h" />
 		<Unit filename="black4.h" />
 		<Unit filename="ltexture.cpp" />
