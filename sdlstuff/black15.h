@@ -100,12 +100,9 @@ void Intersect_Lines(float x0,float y0,float x1,float y1,
 
 // E X T E R N A L S///////////////////////////////////////////////////////////
 
-extern int  *z_buffer;   // the current z buffer memory
 extern int  *z_bank_1;   // memory bank 1 of z buffer
-extern int  *z_bank_2;   // memory bank 2 of z buffer
 
 extern unsigned int z_height; // the height if the z buffer
-extern unsigned int z_height_2;      // the height if half the z buffer
 extern unsigned int z_bank_size;     // size of a z buffer bank in bytes
 
 extern FILE *fp_out;  // general output file

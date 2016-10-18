@@ -23,25 +23,23 @@
 
 // G L O B A L S //////////////////////////////////////////////////////////////
 
-int  *z_buffer,   // the current z buffer memory
-     *z_bank_1,   // memory bank 1 of z buffer
-     *z_bank_2;   // memory bank 2 of z buffer
+int  *z_bank_1;   // memory bank 1 of z buffer
 
-unsigned int z_height    = SCREEN_HEIGHT, // 200,    // the height if the z buffer
-             z_height_2  = HALF_SCREEN_HEIGHT, // 100,    // the height if half the z buffer
-             z_bank_size = SCREEN_HEIGHT * SCREEN_WIDTH; // 64000L; // size of a z buffer bank in bytes
+unsigned int z_height    = SCREEN_HEIGHT, // the height of the z buffer
+             z_bank_size = SCREEN_HEIGHT * SCREEN_WIDTH; // size of a z buffer bank in INTs
 
 FILE *fp_out;   // general output file
 
 ////////////////////////////////////////////////////////////////////////////////
-
+// combining both the flat top and flat bottom triangles into one function
+//
 void Draw_TB_Tri_3D_Z(int x1,int y1, int z1,
                       int x2,int y2, int z2,
                       int x3,int y3, int z3,
                       int color)
 
 {
-// this function draws a triangle that has a flat top
+    int  *z_buffer;
 
     float dx_right,    // the dx/dy ratio of the right edge of line
           dx_left,     // the dx/dy ratio of the left edge of line
@@ -199,20 +197,9 @@ void Draw_TB_Tri_3D_Z(int x1,int y1, int z1,
 
     dest_addr = double_buffer + y1 * SCREEN_WIDTH; // double_buffer+(y1<<8)+(y1<<6);
 
-// start z buffer at proper bank
-#if 0 // GN:
+// set z buffer
+
     z_buffer = z_bank_1 + y1 * SCREEN_WIDTH;
-#else
-    if (y1<z_height_2)
-        z_buffer = z_bank_1 + y1 * SCREEN_WIDTH;
-    else
-    {
-        temp_y = y1-z_height_2;
-
-        z_buffer = z_bank_2 + temp_y * SCREEN_WIDTH;
-
-    } // end else
-#endif // 0
 
 // test if x clipping is needed
 
@@ -225,11 +212,6 @@ void Draw_TB_Tri_3D_Z(int x1,int y1, int z1,
         for (y_index=y1; y_index<=y3; y_index++)
         {
 
-            // test if we need to switch to z buffer bank two
-#if 1 // GN:
-            if (y_index==z_height_2)
-                z_buffer = z_bank_2;
-#endif
 ///////////////////////////////////////////////////////////////////////////////
 
 // this section uses a bit of 16 bit fixed point for the horizontal
@@ -300,17 +282,9 @@ void Draw_TB_Tri_3D_Z(int x1,int y1, int z1,
         // clip x axis with slower version
 
         // draw the triangle
-
         for (y_index=y1; y_index<=y3; y_index++)
         {
-
-            // test if we need to switch to z buffer bank two
-#if 1 // GN:
-            if (y_index==z_height_2)
-                z_buffer = z_bank_2;
-#endif
             // do x clip
-
             xs_clip  = (int)xs;
             xe_clip  = (int)xe;
 
@@ -622,31 +596,28 @@ void Draw_Poly_List_Z(void)
 
 } // end Draw_Poly_List_Z
 
-////////////////////////////////////////////////////////////////////////////////
 
 static int _z_bank[SCREEN_WIDTH * SCREEN_HEIGHT]; // GN: tmp
 
+////////////////////////////////////////////////////////////////////////////////
+// this function allocates the z buffer
+//
 int Create_Z_Buffer(unsigned int height)
 {
-// this function allocates the z buffer in two banks
-
 // set global z buffer values
 height = SCREEN_HEIGHT; // GN: tmp
     z_height   = height; // GN: presently not used
-    z_height_2 = height/2; // GN: this will go away
 
-    z_bank_size = (height/2)*(unsigned int)SCREEN_WIDTH;
+    z_bank_size = height * SCREEN_WIDTH; // GN: height
 
 // allocate the memory
 /*
     z_bank_1 = (int far *)_fmalloc(z_bank_size);
-    z_bank_2 = (int far *)_fmalloc(z_bank_size);
 */
     z_bank_1 = &_z_bank[0];
-    z_bank_2 = &_z_bank[SCREEN_HEIGHT * SCREEN_WIDTH / 2];
 
 // return success or failure
-    if (z_bank_1 && z_bank_2)
+    if (z_bank_1)
         return(1);
     else
         return(0);
@@ -660,7 +631,6 @@ void Delete_Z_Buffer(void)
 {
 /*
     _ffree(z_bank_1);
-    _ffree(z_bank_2);
 */
 } // end Delete_Z_Buffer
 
@@ -672,8 +642,6 @@ void Fill_Z_Buffer(int value)
     int i;
     for (i = 0; i < z_bank_size; i++)
         z_bank_1[i] = value;
-    for (i = 0; i < z_bank_size; i++)
-        z_bank_2[i] = value;
 
 } // end Fill_Z_Buffer
 
