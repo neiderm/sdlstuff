@@ -1030,9 +1030,6 @@ int poly_main( int argc, char* argv[] )
                         // generate the final polygon list
                         Generate_Poly_List(&test_objects[index],ADD_TO_POLY_LIST);
 
-                        // draw the object
-//                        Draw_Object_Solid((object_ptr)&test_objects[index]);
-
                     } // end if object is visible
                     else
                     {
@@ -1102,8 +1099,9 @@ int poly_main( int argc, char* argv[] )
 
 
 
-
+//
 #define Z_OBJS 4
+//
 int zb_main( int argc, char* argv[] )
 {
 
@@ -1174,13 +1172,13 @@ int zb_main( int argc, char* argv[] )
             Build_Look_Up_Tables();
 
             // allocate double buffer
-            Create_Double_Buffer(0); // height/width are fixed
+            Create_Double_Buffer(SCREEN_HEIGHT);
 
-// create a 200 line z buffer (128k)
-Create_Z_Buffer(200);
+            // create a 200 line z buffer (128k)
+            Create_Z_Buffer(SCREEN_HEIGHT);
 
-// initialize the z buffer with a distant value
-Fill_Z_Buffer(16000);
+            // initialize the z buffer with a distant value
+            Fill_Z_Buffer(16000);
 
 
 
@@ -1190,7 +1188,7 @@ Fill_Z_Buffer(16000);
 
 
             // set viewing distance
-            viewing_distance = 250;
+            viewing_distance = 250; // grrrr globals (was this not set in solzdemo.c.?
 
 
 
@@ -1210,7 +1208,6 @@ Fill_Z_Buffer(16000);
                 mStartTicks = SDL_GetTicks(); // capTimer.start();
 
 
-
                 //Clear screen
                 /*
                                 SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
@@ -1219,8 +1216,8 @@ Fill_Z_Buffer(16000);
                 // erase the screen
                 Fill_Double_Buffer(0);
 
-     // initialize z buffer
-     Fill_Z_Buffer(16000);
+                // initialize z buffer
+                Fill_Z_Buffer(16000);
 
 
                 xr = 0;
@@ -1345,6 +1342,14 @@ Fill_Z_Buffer(16000);
                             view_point.z-=20;
                             break;
 
+                        case SDLK_LEFTBRACKET:
+                            Scale_Object(&test_objects[0],1.1);
+                            break;
+
+                        case SDLK_RIGHTBRACKET:
+                            Scale_Object(&test_objects[0],.9);
+                            break;
+
                         case SDLK_z:
                             if ((view_angle.ang_x+=5)>360)
                                 view_angle.ang_x = 0;
@@ -1375,6 +1380,14 @@ Fill_Z_Buffer(16000);
                                 view_angle.ang_z = 360;
                             break;
 
+
+                        case SDLK_q:
+                            test_objects[0].world_pos.x-=2;
+                            break;
+
+                        case SDLK_w:
+                            test_objects[0].world_pos.x+=2;
+                            break;
 
                         case SDLK_p:
                             pause_rotation ^= 1;
@@ -1458,6 +1471,7 @@ Fill_Z_Buffer(16000);
                                  gtri.p2.x, gtri.p2.y,
                                  gtri.clr);
 
+
                 // draw some 2d lines
                 if (line_x < SCREEN_WIDTH)
                     Draw_Line(line_x, 0, line_x, SCREEN_HEIGHT,  0xba, double_buffer); // ha ha should be (SCREEN_HEIGHT-1)
@@ -1476,6 +1490,7 @@ Fill_Z_Buffer(16000);
                 // create the global world to camera transformation matrix
                 Create_World_To_Camera();
 
+                // reset polygon list
                 Generate_Poly_List(NULL,RESET_POLY_LIST);
 
 
@@ -1501,9 +1516,6 @@ Fill_Z_Buffer(16000);
                         // generate the final polygon list
                         Generate_Poly_List(&test_objects[index],ADD_TO_POLY_LIST);
 
-                        // draw the object
-//                        Draw_Object_Solid((object_ptr)&test_objects[index]);
-
                     } // end if object is visible
                     else
                     {
@@ -1512,8 +1524,8 @@ Fill_Z_Buffer(16000);
                 } // end for index
 
 
-     // draw the polygon list using z buffer
-     Draw_Poly_List_Z();
+                // draw the polygon list using z buffer
+                Draw_Poly_List_Z();
 
 
                 /*  using the default masks for the depth: */
