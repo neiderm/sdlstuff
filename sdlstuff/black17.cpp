@@ -2356,7 +2356,7 @@ void Draw_Poly_List(void)
 } // end Draw_Poly_List
 
 /////////////////////////////////////////////////////////////////////////////
-#if 0 // GN:
+
 void Compute_Average_Z(void)
 {
 // this function pre-computes the average z of each polygon, so that the
@@ -2390,15 +2390,13 @@ void Compute_Average_Z(void)
     } // end for index
 
 } // end Compute_Average_Z
-#endif
+
 //////////////////////////////////////////////////////////////////////////////
 
 int Poly_Compare(facet **arg1, facet **arg2)
 {
 // this function comapares the average z's of two polygons and is used by the
 // depth sort surface ordering algorithm
-
-    float z1,z2;
 
     facet_ptr poly_1,poly_2;
 
@@ -2407,56 +2405,9 @@ int Poly_Compare(facet **arg1, facet **arg2)
     poly_1 = (facet_ptr)*arg1;
     poly_2 = (facet_ptr)*arg2;
 
-// compute z average of each polygon
-
-    if (poly_1->num_points==3)
-    {
-        // compute average of 3 point polygon
-
-        z1 = (float)0.33333*(poly_1->vertex_list[0].z+
-                             poly_1->vertex_list[1].z+
-                             poly_1->vertex_list[2].z);
-    }
-    else
-    {
-        // compute average of 4 point polygon
-
-        z1 = (float)0.25*(poly_1->vertex_list[0].z+
-                          poly_1->vertex_list[1].z+
-                          poly_1->vertex_list[2].z+
-                          poly_1->vertex_list[3].z);
-
-    } // end else
-
-
-
-
-// now polygon 2
-
-    if (poly_2->num_points==3)
-    {
-        // compute average of 3 point polygon
-
-        z2 =(float)0.33333*(poly_2->vertex_list[0].z+
-                            poly_2->vertex_list[1].z+
-                            poly_2->vertex_list[2].z);
-    }
-    else
-    {
-        // compute average of 4 point polygon
-
-        z2 = (float)0.25*(poly_2->vertex_list[0].z+
-                          poly_2->vertex_list[1].z+
-                          poly_2->vertex_list[2].z+
-                          poly_2->vertex_list[3].z);
-
-    } // end else
-
-// compare z1 and z2, such that polys' will be sorted in descending Z order
-
-    if (z1>z2)
+    if (poly_1->average_z > poly_2->average_z)
         return(-1);
-    else if (z1<z2)
+    else if (poly_1->average_z < poly_2->average_z)
         return(1);
     else
         return(0);
@@ -2469,6 +2420,8 @@ void Sort_Poly_List(void)
 {
 // this function does a simple z sort on the poly list to order surfaces
 // the list is sorted in descending order, i.e. farther polygons first
+
+    Compute_Average_Z();
 
     qsort((void *)world_polys, num_polys_frame, sizeof(facet_ptr), (__compar_fn_t)Poly_Compare);
 

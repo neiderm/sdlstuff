@@ -175,6 +175,8 @@ typedef struct facet_typ
 
     float normal_length;  // holds pre-computed length of normal
 
+    int average_z;        // holds average z, used in sorting
+
 } facet, *facet_ptr;
 
 // this structure holds an object
