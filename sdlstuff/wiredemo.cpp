@@ -523,6 +523,16 @@ int poly_main( int argc, char* argv[] )
                             view_point.z-=20;
                             break;
 
+
+                        case SDLK_LEFTBRACKET:
+                            Scale_Object(&test_objects[0],1.1);
+                            break;
+
+                        case SDLK_RIGHTBRACKET:
+                            Scale_Object(&test_objects[0],.9);
+                            break;
+
+
                         case SDLK_z:
                             if ((view_angle.ang_x+=5)>360)
                                 view_angle.ang_x = 0;
@@ -551,6 +561,15 @@ int poly_main( int argc, char* argv[] )
                         case SDLK_d:
                             if ((view_angle.ang_z-=5)<0)
                                 view_angle.ang_z = 360;
+                            break;
+
+
+                        case SDLK_q:
+                            test_objects[0].world_pos.x-=2;
+                            break;
+
+                        case SDLK_w:
+                            test_objects[0].world_pos.x+=2;
                             break;
 
 
