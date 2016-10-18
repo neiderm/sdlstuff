@@ -3,7 +3,6 @@
 using namespace std;
 
 
-extern int wd_main( int argc, char* argv[] );
 extern int poly_main( int argc, char* argv[] );
 extern int zb_main( int argc, char* argv[] );
 
@@ -11,32 +10,24 @@ extern int zb_main( int argc, char* argv[] );
 
 int main( int argc, char* argv[] )
 {
-    char cubew[] = "data/CUBEW.PLG";
     char cube[] = "data/CUBE.PLG";
-    char pyrmd[] = "data/PYRAMIDW.PLG";
+    char dart[] = "data/DART.PLG";
+    char diamond[] = "data/DIAMOND.PLG";
+    char pyramid[] = "data/PYRAMID.PLG";
+
     char *args[2] = { "junk" }; // make sure args[0] is something
 
 
-///*
+    args[1] = pyramid; // not right
+    args[1] = diamond; // not right
+    args[1] = dart;    // not sure
     args[1] = cube;
     zb_main(argc, args);
     return 0;
-//*/
 
-    args[1] = cube;
+    args[1] = diamond;
     poly_main(argc, args);
     return 0;
-
-    args[1] = cube;
-    wd_main(argc, args);
-    return 0;
-
-    args[1] = cubew;
-    wd_main(argc, args);
-
-    args[1] = pyrmd;
-    wd_main(argc, args);
-
 
     return 0;
 }
