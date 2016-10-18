@@ -17,7 +17,7 @@
 //#include "black6.h"
 //#include "black8.h"
 //#include "black9.h"
-#include "black11.h"
+#include "black11.h"    //#include "black17.h"
 
 // G L O B A L S //////////////////////////////////////////////////////////////
 
@@ -1254,7 +1254,11 @@ char *PLG_Get_Line(char *string, int max_length, FILE *fp)
 
 int PLG_Load_Object(object_ptr the_object,char *filename,float scale)
 {
-// this function loads an object off disk and allows it to be scaled
+// this function loads an object off disk and allows it to be scaled, the files
+// are in a slightly enhanced PLG format that allows polygons to be defined
+// as one or two sided, this helps the hidden surface removal system. This
+// extra functionality has been encoded in the 2nd nibble from the left of the
+// color descriptor
 
     FILE *fp; // disk file
 
@@ -1270,6 +1274,7 @@ int PLG_Load_Object(object_ptr the_object,char *filename,float scale)
              color_des,         // the color descriptor of a polygon
              logical_color,     // the final color of polygon
              shading,           // the type of shading used on polygon
+             two_sided,         // flags if poly has two sides
              index,             // looping variables
              index_2,
              vertex_num,        // vertex numbers
@@ -1382,6 +1387,7 @@ int PLG_Load_Object(object_ptr the_object,char *filename,float scale)
 
         logical_color = color_des & 0x00ff;
         shading       = color_des >> 12;
+        two_sided     = ((color_des >> 8) & 0x0f);
 
         // read number of vertices in polygon
 
@@ -1404,7 +1410,7 @@ int PLG_Load_Object(object_ptr the_object,char *filename,float scale)
         the_object->polys[index].num_points = num_vertices;
         the_object->polys[index].color      = logical_color;
         the_object->polys[index].shading    = shading;
-        the_object->polys[index].two_sided  = 0;
+        the_object->polys[index].two_sided  = two_sided;
         the_object->polys[index].visible    = 1;
         the_object->polys[index].clipped    = 0;
         the_object->polys[index].active     = 1;
@@ -1541,6 +1547,9 @@ void Clip_Object_3D(object_ptr the_object, int mode)
           x4_compare,
           y4_compare;
 
+    float fov_width;  // width and height of projected viewing plane
+    float fov_height; // used to speed up computations, since it's constant
+    // for any frame
 
 // test if trivial z clipping is being requested
 
@@ -1587,9 +1596,14 @@ void Clip_Object_3D(object_ptr the_object, int mode)
     {
         // CLIP_XYZ_MODE, perform full 3D viewing volume clip
 
+        // compute dimensions of clipping extents at current viewing distance
+
+        fov_width  = ((float)HALF_SCREEN_WIDTH/viewing_distance);
+        fov_height = ((float)HALF_SCREEN_HEIGHT/viewing_distance);
+
+        // process each polygon
         for (curr_poly=0; curr_poly<the_object->num_polys; curr_poly++)
         {
-
             // extract x,y and z components
 
             x1=the_object->vertices_camera[the_object->polys[curr_poly].vertex_list[0]].x;
@@ -1733,10 +1747,12 @@ void Clip_Object_3D(object_ptr the_object, int mode)
 
 void Remove_Backfaces_And_Shade(object_ptr the_object)
 {
-// this function removes all the backfaces of an object by setting the removed
+// this function removes all the backfaces of an object by setting the visibility
 // flag. This function assumes that the object has been transformed into
-// camera coordinates. Also, the function computes the flat shading of the
-// object
+// camera coordinates. Also, the function takes into consideration is the
+// polygons are one or two sided and executed the minimum amount of code
+// in addition to perform the shading calculations
+
 
     int vertex_0,         // vertex indices
         vertex_1,
@@ -1756,53 +1772,141 @@ void Remove_Backfaces_And_Shade(object_ptr the_object)
     for (curr_poly=0; curr_poly<the_object->num_polys; curr_poly++)
     {
 
-        // compute two vectors on polygon that have the same intial points
+        // is this polygon two sised or one sided
 
-        vertex_0 = the_object->polys[curr_poly].vertex_list[0];
-        vertex_1 = the_object->polys[curr_poly].vertex_list[1];
-        vertex_2 = the_object->polys[curr_poly].vertex_list[2];
-
-        // the vector u = vo->v1
-
-        Make_Vector_3D((point_3d_ptr)&the_object->vertices_world[vertex_0],
-                       (point_3d_ptr)&the_object->vertices_world[vertex_1],
-                       (vector_3d_ptr)&u);
-
-        // the vector v = vo-v2
-
-        Make_Vector_3D((point_3d_ptr)&the_object->vertices_world[vertex_0],
-                       (point_3d_ptr)&the_object->vertices_world[vertex_2],
-                       (vector_3d_ptr)&v);
-
-        // compute the normal to polygon v x u
-
-        Cross_Product_3D((vector_3d_ptr)&v,
-                         (vector_3d_ptr)&u,
-                         (vector_3d_ptr)&normal);
-
-        // compute the line of sight vector, since all coordinates are world all
-        // object vertices are already relative to (0,0,0), thus
-
-        sight.x = view_point.x-the_object->vertices_world[vertex_0].x;
-        sight.y = view_point.y-the_object->vertices_world[vertex_0].y;
-        sight.z = view_point.z-the_object->vertices_world[vertex_0].z;
-
-        // compute the dot product between line of sight vector and normal to surface
-
-        dp = Dot_Product_3D((vector_3d_ptr)&normal,(vector_3d_ptr)&sight);
-
-        // is surface visible
-
-        if (dp>0)
+        if (the_object->polys[curr_poly].two_sided == ONE_SIDED)
         {
-            // set visible flag
+            // compute two vectors on polygon that have the same intial points
+
+            vertex_0 = the_object->polys[curr_poly].vertex_list[0];
+            vertex_1 = the_object->polys[curr_poly].vertex_list[1];
+            vertex_2 = the_object->polys[curr_poly].vertex_list[2];
+
+            // the vector u = vo->v1
+
+            Make_Vector_3D((point_3d_ptr)&the_object->vertices_world[vertex_0],
+                           (point_3d_ptr)&the_object->vertices_world[vertex_1],
+                           (vector_3d_ptr)&u);
+
+            // the vector v = vo-v2
+
+            Make_Vector_3D((point_3d_ptr)&the_object->vertices_world[vertex_0],
+                           (point_3d_ptr)&the_object->vertices_world[vertex_2],
+                           (vector_3d_ptr)&v);
+
+            // compute the normal to polygon v x u
+
+            Cross_Product_3D((vector_3d_ptr)&v,
+                             (vector_3d_ptr)&u,
+                             (vector_3d_ptr)&normal);
+
+            // compute the line of sight vector, since all coordinates are world all
+            // object vertices are already relative to (0,0,0), thus
+
+            sight.x = view_point.x-the_object->vertices_world[vertex_0].x;
+            sight.y = view_point.y-the_object->vertices_world[vertex_0].y;
+            sight.z = view_point.z-the_object->vertices_world[vertex_0].z;
+
+            // compute the dot product between line of sight vector and normal to surface
+
+            dp = Dot_Product_3D((vector_3d_ptr)&normal,(vector_3d_ptr)&sight);
+
+            // is surface visible
+
+            if (dp>0)
+            {
+                // set visible flag
+
+                the_object->polys[curr_poly].visible = 1;
+
+                // compute light intensity if needed
+
+                if (the_object->polys[curr_poly].shading==FLAT_SHADING)
+                {
+
+                    // compute the dot product between the light source vector
+                    // and normal vector to surface
+
+                    dp = Dot_Product_3D((vector_3d_ptr)&normal,
+                                        (vector_3d_ptr)&light_source);
+
+                    // test if light ray is reflecting off surface
+
+                    if (dp>0)
+                    {
+                        // now cos 0 = (u.v)/|u||v| or
+
+                        intensity = ambient_light + (15*dp/(the_object->polys[curr_poly].normal_length));
+
+                        // test if intensity has overflowed
+
+                        if (intensity >15)
+                            intensity = 15;
+
+                        // intensity now varies from 0-1, 0 being black or grazing and 1 being
+                        // totally illuminated. use the value to index into color table
+
+                        the_object->polys[curr_poly].shade =
+                            the_object->polys[curr_poly].color - (int)intensity;
+
+                    } // end if light is reflecting off surface
+                    else
+                        the_object->polys[curr_poly].shade =
+                            the_object->polys[curr_poly].color - (int)ambient_light;
+
+                } // end if use flat shading
+                else
+                {
+                    // assume constant shading and simply assign color to shade
+
+                    the_object->polys[curr_poly].shade = the_object->polys[curr_poly].color;
+
+                } // end else constant shading
+
+            } // end if face is visible
+            else
+                the_object->polys[curr_poly].visible = 0;
+
+        } // end if one sided
+        else
+        {
+            // else polygon is always visible i.e. two sided, set visibility flag
+            // so engine renders it
+
+            // set visibility
 
             the_object->polys[curr_poly].visible = 1;
 
-            // compute light intensity if needed
+            // perform shading calculation
 
             if (the_object->polys[curr_poly].shading==FLAT_SHADING)
             {
+                // compute normal
+
+                // compute two vectors on polygon that have the same intial points
+
+                vertex_0 = the_object->polys[curr_poly].vertex_list[0];
+                vertex_1 = the_object->polys[curr_poly].vertex_list[1];
+                vertex_2 = the_object->polys[curr_poly].vertex_list[2];
+
+                // the vector u = vo->v1
+
+                Make_Vector_3D((point_3d_ptr)&the_object->vertices_world[vertex_0],
+                               (point_3d_ptr)&the_object->vertices_world[vertex_1],
+                               (vector_3d_ptr)&u);
+
+                // the vector v = vo-v2
+
+                Make_Vector_3D((point_3d_ptr)&the_object->vertices_world[vertex_0],
+                               (point_3d_ptr)&the_object->vertices_world[vertex_2],
+                               (vector_3d_ptr)&v);
+
+                // compute the normal to polygon v x u
+
+                Cross_Product_3D((vector_3d_ptr)&v,
+                                 (vector_3d_ptr)&u,
+                                 (vector_3d_ptr)&normal);
+
 
                 // compute the dot product between the light source vector
                 // and normal vector to surface
@@ -1816,11 +1920,11 @@ void Remove_Backfaces_And_Shade(object_ptr the_object)
                 {
                     // now cos 0 = (u.v)/|u||v| or
 
-                    intensity = ambient_light + (15*dp/(the_object->polys[curr_poly].normal_length));
+                    intensity = ambient_light + (dp*(the_object->polys[curr_poly].normal_length));
 
                     // test if intensity has overflowed
 
-                    if (intensity >15)
+                    if (intensity > 15)
                         intensity = 15;
 
                     // intensity now varies from 0-1, 0 being black or grazing and 1 being
@@ -1838,15 +1942,11 @@ void Remove_Backfaces_And_Shade(object_ptr the_object)
             else
             {
                 // assume constant shading and simply assign color to shade
-
                 the_object->polys[curr_poly].shade = the_object->polys[curr_poly].color;
 
             } // end else constant shading
 
-        } // end if face is visible
-        else
-            the_object->polys[curr_poly].visible = 0; // set invisible flag
-
+        } // end else two sided
 
     } // end for curr_poly
 
@@ -2171,9 +2271,7 @@ void Draw_Poly_List(void)
 
     for (curr_poly=0; curr_poly<num_polys_frame; curr_poly++)
     {
-
         // reset quad flag
-
         is_quad=0;
 
         // do Z clipping first before projection

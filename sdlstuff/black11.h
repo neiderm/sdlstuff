@@ -12,6 +12,17 @@
 
 // polygon shading specifiers for PLG files
 
+// format = 0xh3 h2 h1h0
+// h3   = shading type
+// h2   = special attributes= d3d2d1d0
+
+// d3,d2,d1 unused, d0 = two sided flag, 0 = 1 sided, 1 = 2 sided
+
+// h1h0 = color 0-255
+
+#define ONE_SIDED               0 // number of sides polygon has
+#define TWO_SIDED               1
+
 #define CONSTANT_SHADING        0
 #define FLAT_SHADING            1
 #define GOURAUD_SHADING         2 (actually metallic under PLG defintion)
@@ -73,6 +84,11 @@
 
 #define RESET_POLY_LIST   0
 #define ADD_TO_POLY_LIST  1
+
+// fixed point stuff
+
+#define FP_SHIFT          16          // 16:16 format
+#define FP_SCALE          65526L      // 2^16 = 65536, used to convert floats
 
 // M A C R O S ///////////////////////////////////////////////////////////////
 
